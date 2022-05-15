@@ -1,10 +1,26 @@
+#if defined (_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <thread>
+#ifndef _MSC_VER
 #include <byteswap.h>
+#define BSWAP32 bswap_32
+#else  //Windows
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <fileapi.h>
+#define BSWAP32 _byteswap_ulong
+#endif
+
 #include <stdint.h>
-#include <assert.h>
 #include <stdbool.h>
+
+#include "yaz0.h"
+#include "ExtractBaserom.h"
 
 #define DMA_ENTRY_SIZE 16
 
@@ -15,25 +31,7 @@ typedef enum Addresses {
     /* 3 */ physicalEnd
 } Addresses;
 
-//Rom CRC's
-
-#define NTSC_10 0xEC7011B7
-#define NTSC_11 0xD43DA81F
-#define NTSC_12 0x693BA2AE
-#define PAL_10 0xB044B569
-#define PAL_11 0xB2055FBD
-#define NTSC_JP_GC_CE 0xF7F52DB8
-#define NTSC_JP_GC 0xF611F4BA
-#define NTSC_US_GC 0xF3DD35BA
-#define PAL_GC 0x09465AC3
-#define NTSC_JP_MQ 0xF43B45BA
-#define NTSC_US_MQ 0xF034001A
-#define PAL_MQ 0x1D4136F3
-#define PAL_GC_DBG1 0x871E1C92 // 03-21-2002 build
-#define PAL_GC_DBG2 0x87121EFE // 03-13-2002 build
-#define PAL_GC_MQ_DBG 0x917D18F6
-#define IQUE_TW 0x3D81FB3E
-#define IQUE_CN 0xB1E1E07B
+//Crcs in a header file
 
 //Rom DMA table start
 
@@ -56,9 +54,19 @@ typedef enum Addresses {
 #define OFF_CN_IQUE 0xB7A0
 #define OFF_TW_IQUE 0xB240
 
-uint32_t dmaTableOffset;
+static uint32_t dmaTableOffset;
 
-void getVersion(FILE* rom, FILE** fileList) {
+int gWaitForImGuiImput = false;
+int gWaitForImGuiReason = 0;
+int gImGuiResponse = 0;
+char currentFile[35];
+
+std::mutex gMutex;
+
+volatile ExtractorState gExtractorState = ExtractorWaiting;
+
+
+uint32_t getVersion(FILE* rom, FILE** fileList) {
     uint32_t romCRC;
 
     fseek(rom, 0x10, SEEK_SET);
@@ -68,92 +76,92 @@ void getVersion(FILE* rom, FILE** fileList) {
         exit(1);
     }
 
-    romCRC = __bswap_32(romCRC);
+    romCRC = BSWAP32(romCRC);
 
     switch (romCRC) {
     case NTSC_10:
         puts("Detected version NTSC 1.0");
-        *(fileList) = fopen("filelists/filelist_ntsc_n64.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_ntsc_n64.txt", "r");
         dmaTableOffset = OFF_NTSC_10;
         break;
     case NTSC_11:
         puts("Detected version NTSC 1.1");
-        *(fileList) = fopen("filelists/filelist_ntsc_n64.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_ntsc_n64.txt", "r");
         dmaTableOffset = OFF_NTSC_11;
         break;
     case NTSC_12:
         puts("Detected version NTSC 1.2");
-        *(fileList) = fopen("filelists/filelist_ntsc_n64.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_ntsc_n64.txt", "r");
         dmaTableOffset = OFF_NTSC_12;
         break;
     case PAL_10:
         puts("Detected version PAL N64");
-        *(fileList) = fopen("filelists/filelist_pal_n64.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_pal_n64.txt", "r");
         dmaTableOffset = OFF_PAL_10;
         break;
     case PAL_11:
         puts("Detected version PAL N64");
-        *(fileList) = fopen("filelists/filelist_pal_n64.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_pal_n64.txt", "r");
         dmaTableOffset = OFF_PAL_11;
         break;
     case NTSC_JP_GC:
         puts("Detected version JP GameCube (MQ Disk)");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_JP_GC;
         break;
     case NTSC_JP_GC_CE:
         puts("Detected version GameCube (Collectors Edition Disk)");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_JP_GC_CE;
         break;
     case NTSC_JP_MQ:
         puts("Detected version JP Master Quest");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_JP_MQ;
         break;
     case NTSC_US_MQ:
         puts("Detected version US Master Quest");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_JP_MQ;
         break;
     case NTSC_US_GC:
         puts("Detected version US GameCube");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_US_MQ;
         break;
     case PAL_GC:
         puts("Detected version PAL GameCube");
-        *(fileList) = fopen("filelists/filelist_gamecube+mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_gamecube+mq.txt", "r");
         dmaTableOffset = OFF_PAL_GC;
         break;
     case PAL_MQ:
         puts("Detected version PAL Master Quest");
-        *(fileList) = fopen("filelists/filelist_pal_mq.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_pal_mq.txt", "r");
         dmaTableOffset = OFF_PAL_MQ;
         break;
     case PAL_GC_DBG1:
         printf("Detected version GameCube Debug\n");
-        *(fileList) = fopen("filelists/filelist_dbg.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_dbg.txt", "r");
         dmaTableOffset = OFF_PAL_GC_DBG1;
         break;
     case PAL_GC_DBG2:
         printf("Detected version GameCube Debug\n");
-        *(fileList) = fopen("filelists/filelist_dbg.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_dbg.txt", "r");
         dmaTableOffset = OFF_PAL_GC_DBG2;
         break;
     case PAL_GC_MQ_DBG:
         printf("Detected version Master Quest GameCube Debug\n");
-        *(fileList) = fopen("filelists/filelist_dbg.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_dbg.txt", "r");
         dmaTableOffset = OFF_PAL_MQ_DBG;
         break;
     case IQUE_CN:
         puts("Detected version CN IQUE");
-        *(fileList) = fopen("filelists/filelist_ique.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_ique.txt", "r");
         dmaTableOffset = OFF_CN_IQUE;
         break;
     case IQUE_TW:
         puts("Detected version TW IQUE");
-        *(fileList) = fopen("filelists/filelist_ique.txt", "r");
+        *(fileList) = fopen("assets/filelists/filelist_ique.txt", "r");
         dmaTableOffset = OFF_TW_IQUE;
         break;
     default:
@@ -161,7 +169,42 @@ void getVersion(FILE* rom, FILE** fileList) {
     }
     if (*(fileList) == NULL) {
         fprintf(stderr, "Could not open filelist\n");
-        exit(1);
+    }
+    return romCRC;
+}
+
+
+void DeleteAllFiles(const wchar_t* folderPath)
+{
+    wchar_t fileFound[256];
+    WIN32_FIND_DATA info;
+    HANDLE hp;
+    swprintf(fileFound, sizeof(fileFound), L"%s\\*.*", folderPath);
+    hp = FindFirstFile(fileFound, &info);
+    do
+    {
+        swprintf(fileFound, sizeof(fileFound), L"%s\\%ws", folderPath, info.cFileName);
+        DeleteFile(fileFound);
+
+    } while (FindNextFile(hp, &info)); 
+    FindClose(hp);
+}
+
+static void createDir(const wchar_t* dirName) {
+    if (!CreateDirectory(dirName, NULL)) {
+        DWORD lastError = GetLastError();
+        switch (lastError) {
+        case ERROR_ALREADY_EXISTS:
+            //gWaitForImGuiReason = 
+            //WAIT_FOR_IMGUI_INPUT;
+            DeleteAllFiles(dirName);
+            RemoveDirectory(dirName);
+            if (!CreateDirectory(dirName, NULL)) {
+                MessageBox(NULL, L"Tried twice and couldn't make the \'baserom\' folder.", L"Failed to make folder", MB_OK);
+
+            }
+
+        }
     }
 }
 
@@ -172,20 +215,18 @@ int extract(const char* romName) {
     uint32_t dataAddr[4];
 
     if (rom == NULL) {
-        fprintf(stderr, "Could not open baserom.z64\n");
+        fprintf(stderr, "Could not open rom file\n");
         exit(1);
     }
-
+    
     getVersion(rom, &fileList);
 
-    if (system("mkdir -p baserom/") == -1) {
-        fprintf(stderr, "Could not create baserom folder\n");
-        exit(1);
-    }
+    createDir(L"baserom");
 
-    char currentFile[35];
+    gExtractorState = ExtractorExtracting;
 
     for (uint32_t i = 0; fgets(currentFile, 35, fileList) != NULL; i++) {
+        auto lock = std::lock_guard<std::mutex>(gMutex);
         char outFileName[45] = "baserom/";
         void* data;
         bool isCompressed;
@@ -197,10 +238,10 @@ int extract(const char* romName) {
             exit(1);
         }
 
-        dataAddr[virtualStart] = bswap_32(dataAddr[virtualStart]);
-        dataAddr[virtualEnd] = bswap_32(dataAddr[virtualEnd]);
-        dataAddr[physicalStart] = bswap_32(dataAddr[physicalStart]);
-        dataAddr[physicalEnd] = bswap_32(dataAddr[physicalEnd]);
+        dataAddr[virtualStart] = BSWAP32(dataAddr[virtualStart]);
+        dataAddr[virtualEnd] = BSWAP32(dataAddr[virtualEnd]);
+        dataAddr[physicalStart] = BSWAP32(dataAddr[physicalStart]);
+        dataAddr[physicalEnd] = BSWAP32(dataAddr[physicalEnd]);
 
         if (dataAddr[physicalEnd] == 0) {
             data = malloc(dataAddr[virtualEnd] - dataAddr[virtualStart]);
@@ -211,7 +252,7 @@ int extract(const char* romName) {
             isCompressed = true;
         }
 
-        strcat(outFileName, currentFile);
+        strcat(outFileName, (char*)currentFile);
         outFileName[strlen(outFileName) - 1] = 0;
         outFile = fopen(outFileName, "wb");
 
@@ -245,38 +286,29 @@ int extract(const char* romName) {
                 fprintf(stderr, "Could not write rom file %s\n", currentFile);
                 exit(1);
             }
-#ifndef NDEBUG
-            else {
-                printf("Extracting file: %s    0x%x-0x%x\n", currentFile, dataAddr[virtualStart], dataAddr[virtualEnd]);
-            }
-#endif
-        }
-        else {
-            if (fwrite(data, dataAddr[physicalEnd] - dataAddr[physicalStart], 1, outFile) != 1) {
-                fprintf(stderr, "Could not write rom file %s\n", currentFile);
+        } else {
+            size_t size = dataAddr[virtualEnd] - dataAddr[virtualStart];
+            void* decompressedData = malloc(size);
+            if (decompressedData == NULL) {
+                fprintf(stderr, "could not allocate memory for decompressed data\n");
                 exit(1);
             }
-#ifndef NDEBUG
-            else {
-                printf("Extracting file: %s    0x%x-0x%x\n", currentFile, dataAddr[physicalStart],
-                    dataAddr[physicalEnd]);
+
+            yaz0_decode((const unsigned char*)data, (unsigned char*)decompressedData, size);
+            
+            if (fwrite(decompressedData, size, 1, outFile) != 1) {
+                fprintf(stderr, "Could not write rom file %s\n", currentFile);
+                free(decompressedData);
+                exit(1);
             }
-#endif
+            free(decompressedData);
         }
 
         fclose(outFile);
-        if (isCompressed) {
-            char decompressionCommand[128] = "tools/yaz0 -d ";
-            strcat(decompressionCommand, outFileName);
-            strcat(decompressionCommand, " ");
-            strcat(decompressionCommand, outFileName);
-            if (system(decompressionCommand) == -1) {
-                fprintf(stderr, "Failed to decompress rom file: %s\n", currentFile);
-            }
-        }
 
         free(data);
     }
     fclose(rom);
+    gExtractorState = ExtractorDone;
     return 0;
 }

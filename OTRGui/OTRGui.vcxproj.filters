@@ -13,5 +13,72 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\IMGUI_Backend">
+      <UniqueIdentifier>{0edb5471-f371-496c-b607-c6fd98a5ac51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{78af565f-4556-4b18-86be-3d7d362b6ab6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\BaseromUtils">
+      <UniqueIdentifier>{5cf3fc9b-7488-44eb-9426-e3cf99e9d402}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\backends\imgui_impl_dx9.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\backends\imgui_impl_win32.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\imgui.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\imgui_draw.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\imgui_tables.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\imgui_widgets.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\imgui_demo.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BaseromUtils\yaz0.cpp">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BaseromUtils\md5.c">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ImGui\ImGuiFileDialog.cpp">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BaseromUtils\ExtractBaserom.cpp">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\BaseromUtils\yaz0.h">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BaseromUtils\readrwrite.h">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BaseromUtils\ExtractBaserom.h">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BaseromUtils\md5.h">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ImGui\ImGuiFileDialog.h">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ImGui\ImGuiFileDialogConfig.h">
+      <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
