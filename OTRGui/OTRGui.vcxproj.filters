@@ -60,6 +60,9 @@
     <ClCompile Include="src\BaseromUtils\ExtractBaserom.cpp">
       <Filter>Source Files\Utils\BaseromUtils</Filter>
     </ClCompile>
+    <ClCompile Include="src\BaseromUtils\EndianUtils.cpp">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\BaseromUtils\yaz0.h">
@@ -79,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="src\ImGui\ImGuiFileDialogConfig.h">
       <Filter>Source Files\IMGUI_Backend</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BaseromUtils\EndianUtils.h">
+      <Filter>Source Files\Utils\BaseromUtils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

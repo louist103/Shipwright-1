@@ -291,7 +291,7 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 #endif
 
 
-void md5File(FILE* file, char* outBuffer) {
+void md5File(FILE* file, unsigned char* outBuffer) {
 	char buffer[1024 * 2];
 	size_t inputSize = 0;
 	fseek(file, 0, SEEK_SET);
@@ -301,6 +301,17 @@ void md5File(FILE* file, char* outBuffer) {
 
 	while ((inputSize = fread(buffer, 1, sizeof(buffer), file)) > 0) {
 		MD5_Update(&ctx, (char*)buffer, inputSize);
+	}
+	//char buffer2[16];
+	MD5_Final(outBuffer, &ctx);
+}
+
+void md5Blob(uint8_t* blob, unsigned char* outBuffer, unsigned long romSize) {
+	MD5_CTX ctx;
+	MD5_Init(&ctx);
+
+	for (unsigned long pos = 0; pos < romSize; pos += 1024) {
+		MD5_Update(&ctx, (const void*)&blob[pos], 1024);
 	}
 	//char buffer2[16];
 	MD5_Final(outBuffer, &ctx);
