@@ -24,23 +24,35 @@
 #define IQUE_TW 0x3D81FB3E
 #define IQUE_CN 0xB1E1E07B
 
-typedef enum ExtractorState {
-	ExtractorWaiting,
-	ExtractorExtracting,
-	ExtractorDone,
+typedef enum class ExtractorState {
+	Waiting,
+	Extracting,
+	Done,
 }ExtractorState;
 
-extern std::mutex gMutex;
+typedef enum class ImGuiResponse {
+	None,
+	DeleteFiles,
+	KeepFiles,
+}ImGuiResponse;
 
-extern int gWaitForImGuiImput;
+extern std::mutex gMutex;
+extern std::mutex gFileMutex;
+extern std::condition_variable cv;
+
+
+extern int gExtractorWaiting;
 extern int gWaitForImGuiReason;
-extern int gImGuiResponse;
+extern ImGuiResponse gImGuiResponse;
 extern char currentFile[35];
+extern uint32_t gRomCrc;
 
 extern volatile ExtractorState gExtractorState;
 
-int extract(const char* fileName);
-uint32_t getVersion(FILE* rom, FILE** fileList);
+int extract(FILE* rom, FILE* fileList);
+int extractRam(const void* rom, FILE* fileList);
+uint32_t getVersion(void* rom, FILE** fileList, bool fromRam);
+//uint32_t getVersionRam(void* rom, FILE** fileList);
 
 
 #endif
