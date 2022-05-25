@@ -22,9 +22,17 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
+typedef enum class OtrExtractState {
+    Waiting,
+    Extracting,
+    Done,
+} OtrExtractState;
+
 static LPDIRECT3D9              g_pD3D = NULL;
 static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
 static D3DPRESENT_PARAMETERS    g_d3dpp = {};
+
+static OtrExtractState sOtrExtractState = OtrExtractState::Waiting;
 
 static bool CreateDeviceD3D(HWND hWnd);
 static void CleanupDeviceD3D();
@@ -102,13 +110,15 @@ static std::map<const uint32_t, const std::array<unsigned char, 16>> md5Map {
 };
 
 void AskToExtractOtr(const bool extractFromRam, const std::string& romPath) {
-    bool useOldExtractionStyle = false;
+    static bool useOldExtractionStyle = false;
+    static bool sOtrExistsLatch = false;
 
         ImGui::Checkbox("Use old extraction style?", &useOldExtractionStyle);
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Extracts all files to disk then combines into an archive. If unsure don't use this.");
         }
-        if (ImGui::Button("Generate OTR")) {
+        if (ImGui::Button("Generate OTR") || sOtrExistsLatch) {
+            sOtrExistsLatch = true;
             FILE* otrFile = fopen("oot.otr", "rb");
             if (otrFile != nullptr) {
                 fclose(otrFile);
@@ -116,21 +126,22 @@ void AskToExtractOtr(const bool extractFromRam, const std::string& romPath) {
                 if (ImGui::BeginPopupModal("OTR file exists")) {
                     ImGui::Text("OOT.otr already exists. Delete it and make a new one?");
                     if (ImGui::Button("Yes", ImVec2(120, 0))) {
+                        sOtrExistsLatch = false;
                         remove("oot.otr");
                         ImGui::CloseCurrentPopup();
+                        PrepareForExtraction(useOldExtractionStyle, extractFromRam, romPath);
                     }
                     ImGui::SameLine();
                     if (ImGui::Button("No", ImVec2(120, 0))) {
+                        sOtrExistsLatch = false;
                         ImGui::CloseCurrentPopup();
-                        return;
-
                     }
                     ImGui::EndPopup();
                 }
             }
-
-            PrepareForExtraction(useOldExtractionStyle, extractFromRam, romPath);
-
+            else {
+                PrepareForExtraction(useOldExtractionStyle, extractFromRam, romPath);
+            }
         }
 }
 
@@ -371,6 +382,15 @@ int main(void) {
             AskToExtractOtr(extractFromRam, romPath);
         }
 
+        switch (sOtrExtractState) {
+            case OtrExtractState::Extracting:
+                ImGui::TextColored(yellowColor, "Creating OTR file. This may take a few minutes.");
+                break;
+            case OtrExtractState::Done:
+                ImGui::TextColored(greenColor, "OTR file generated.");
+                break;
+        }
+
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
@@ -452,7 +472,7 @@ const wchar_t* GetXmlPathW(void) {
 }
 
 void PrepareForExtraction(const bool useOldStyle, const bool useNewBaserom, const std::string& originalBaseromPath) {
-    std::wstring romPath;
+    static std::wstring romPath; //Needs to be static for threads
     wchar_t targetBaserom[21];
     // There is probably a better way to do this
     if (useNewBaserom) {
@@ -471,7 +491,9 @@ void PrepareForExtraction(const bool useOldStyle, const bool useNewBaserom, cons
         ExtractSingleThreaded(romPath);
     }
     else {
-        ExtractNewStyle(romPath);
+        //ExtractNewStyle(romPath);
+        std::thread extractNewStyleThread(ExtractNewStyle, romPath);
+        extractNewStyleThread.detach();
     }
 }
 
@@ -523,6 +545,7 @@ void ExtractSingleThreaded(const std::wstring& romPath) {
             WaitForSingleObject(pi.hProcess, INFINITE);
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
+            puts("Generation complete");
         }
         xmlQueue.pop();
     }
@@ -532,6 +555,8 @@ void ExtractSingleThreaded(const std::wstring& romPath) {
 void BuildOtr(void) {
     puts("building OTR file");
 }
+
+
 //TODO audio files foR MQ
 void ExtractNewStyle(const std::wstring& romPath) {
     STARTUPINFO si;
@@ -542,7 +567,7 @@ void ExtractNewStyle(const std::wstring& romPath) {
 
     const wchar_t* configPath = GetConfigPath();
     const wchar_t* xmlPath = GetXmlPathW();
-
+    sOtrExtractState = OtrExtractState::Extracting;
     memset(&si, 0, sizeof(si));
     memset(&pi, 0, sizeof(pi));
     si.cb = sizeof(si);
@@ -553,6 +578,7 @@ void ExtractNewStyle(const std::wstring& romPath) {
         WaitForSingleObject(pi.hProcess, INFINITE);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        sOtrExtractState = OtrExtractState::Done;
     }
 }
 

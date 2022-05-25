@@ -328,13 +328,6 @@ int extractRam(const void* rom, FILE* fileList) {
 
         memcpy(dataAddr, (uint8_t*)((uintptr_t)rom + (dmaTableOffset + (DMA_ENTRY_SIZE * i))), DMA_ENTRY_SIZE);
 
-        //fseek(rom, dmaTableOffset + (DMA_ENTRY_SIZE * i), SEEK_SET);
-        //
-        //if (fread(&dataAddr, sizeof(uint32_t), 4, rom) != 4) {
-        //    fprintf(stderr, "Could not read addresses for file %s\n", currentFile);
-        //    exit(1);
-        //}
-
         dataAddr[virtualStart] = BSWAP32(dataAddr[virtualStart]);
         dataAddr[virtualEnd] = BSWAP32(dataAddr[virtualEnd]);
         dataAddr[physicalStart] = BSWAP32(dataAddr[physicalStart]);

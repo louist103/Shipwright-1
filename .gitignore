@@ -24,6 +24,7 @@ docs/doxygen/
 *.map
 *.dump
 out.txt
+*.exe
 
 # Tool artifacts
 tools/mipspro7.2_compiler/
@@ -405,3 +406,9 @@ tags
 oot.otr
 *.sav
 shipofharkinian.ini
+ReleaseObj/*
+/OTRGui/baserom_871E1C92
+/OTRGui/Extract
+/OTRGui/out
+/OTRGui/*.otr
+/OTRGui/baserom_917D18F6
