@@ -1,23 +1,47 @@
+#ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
+#endif
+#define USE_SDL 1
 #include <array>
 #include <map>
 #include <queue>
 #include <filesystem>
 
 #include "ImGui/imgui.h"
-#include "ImGui/backends/imgui_impl_dx9.h"
+
+#ifdef _WIN32
 #include "ImGui/backends/imgui_impl_win32.h"
-#include "ImGui/ImGuiFileDialog.h"
+#endif
+
+#ifdef USE_DX9
+#include "ImGui/backends/imgui_impl_dx9.h"
 #include <d3d9.h>
+static LPDIRECT3D9              g_pD3D = NULL;
+static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
+static D3DPRESENT_PARAMETERS    g_d3dpp = {};
+static bool CreateDeviceD3D(HWND hWnd);
+static void CleanupDeviceD3D();
+static void ResetDevice();
 #include <tchar.h>
+
+static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#elif  USE_SDL
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl2.h"
+#include <stdio.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#endif 
+
 
 #include <thread>
 
+#include "ImGui/ImGuiFileDialog.h"
 #include "BaseromUtils/ExtractBaserom.h"
 #include "BaseromUtils/md5.h"
 #include "BaseromUtils/EndianUtils.h"
 
-#pragma comment(lib,"d3d9.lib")
+///#pragma comment(lib,"d3d9.lib")
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -28,22 +52,15 @@ typedef enum class OtrExtractState {
     Done,
 } OtrExtractState;
 
-static LPDIRECT3D9              g_pD3D = NULL;
-static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
-static D3DPRESENT_PARAMETERS    g_d3dpp = {};
-
 static OtrExtractState sOtrExtractState = OtrExtractState::Waiting;
 
-static bool CreateDeviceD3D(HWND hWnd);
-static void CleanupDeviceD3D();
-static void ResetDevice();
-static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void BuildPathQueue(void);
-void PrepareForExtraction(const bool useOldStyle,const bool useNewBaserom, const std::string& originalBaseromPath);
-void ExtractSingleThreaded(const std::wstring &romPath);
-void ExtractNewStyle(const std::wstring& romPath);
 
-void printRomInfo(void) {
+static void BuildPathQueue(void);
+static void PrepareForExtraction(const bool useOldStyle,const bool useNewBaserom, const std::string& originalBaseromPath);
+static void ExtractSingleThreaded(const std::wstring &romPath);
+static void ExtractNewStyle(const std::wstring& romPath);
+
+static void printRomInfo(void) {
     switch (gRomCrc) {
     case NTSC_10:
         ImGui::Text("Detected version NTSC 1.0. CRC: %X", gRomCrc);
@@ -109,7 +126,7 @@ static std::map<const uint32_t, const std::array<unsigned char, 16>> md5Map {
     {PAL_GC_MQ_DBG, {0xf0, 0xb7, 0xf3, 0x53, 0x75, 0xf9, 0xcc, 0x8c, 0xa1, 0xb2, 0xd5, 0x9d, 0x78, 0xe3, 0x54, 0x05 }}
 };
 
-void AskToExtractOtr(const bool extractFromRam, const std::string& romPath) {
+static void AskToExtractOtr(const bool extractFromRam, const std::string& romPath) {
     static bool useOldExtractionStyle = false;
     static bool sOtrExistsLatch = false;
 
@@ -149,9 +166,34 @@ int main(void) {
 
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
+#ifdef USE_DX9
     const WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("OTRExporter GUI"), NULL };
     ::RegisterClassEx(&wc);
     HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("OTRExporter GUI DX9"), WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
+#elif USE_SDL
+    // Setup SDL
+    // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
+    // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
+    {
+        printf("Error: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    // Setup window
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+    SDL_GL_MakeCurrent(window, gl_context);
+    SDL_GL_SetSwapInterval(1); // Enable vsync
+#endif
+
+    
     char newRomName[20];
     std::string romPath;
     FILE* romFile = nullptr;
@@ -164,6 +206,7 @@ int main(void) {
     
     std::array<unsigned char, 16> romMd5;
 
+#ifdef USE_DX9
     if (!CreateDeviceD3D(hwnd))
     {
         CleanupDeviceD3D();
@@ -174,7 +217,7 @@ int main(void) {
     // Show the window
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
-
+#endif
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -195,10 +238,14 @@ int main(void) {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
-
+#ifdef USE_DX9
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX9_Init(g_pd3dDevice);
+#elif USE_SDL
+    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+    ImGui_ImplOpenGL2_Init();
+#endif
 
     const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     const ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -211,6 +258,7 @@ int main(void) {
     {
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
+#ifdef USE_DX9
         MSG msg;
         while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
         {
@@ -226,7 +274,21 @@ int main(void) {
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-
+#elif USE_SDL
+SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            ImGui_ImplSDL2_ProcessEvent(&event);
+            if (event.type == SDL_QUIT)
+                done = true;
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
+                done = true;
+        }
+         // Start the Dear ImGui frame
+        ImGui_ImplOpenGL2_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+#endif
 
 
         ImGui::Begin("Hello, world!");
@@ -397,6 +459,7 @@ int main(void) {
 
 
         // Rendering
+#ifdef USE_DX9
         ImGui::EndFrame();
         g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, FALSE);
         g_pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
@@ -422,10 +485,19 @@ int main(void) {
         // Handle loss of D3D9 device
         if (result == D3DERR_DEVICELOST && g_pd3dDevice->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
             ResetDevice();
+#elif USE_SDL
+        ImGui::Render();
+        glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+        //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
+        ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+        SDL_GL_SwapWindow(window);
+#endif
     }
 
 
-
+#ifdef USE_DX9
     ImGui_ImplDX9_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
@@ -433,19 +505,27 @@ int main(void) {
     CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     ::UnregisterClass(wc.lpszClassName, wc.hInstance);
+#elif USE_SDL
+    ImGui_ImplOpenGL2_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
 
+    SDL_GL_DeleteContext(gl_context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+#endif
     return 0;
 }
 
 #ifdef _MSC_VER
-constexpr const wchar_t ZAPD_EXEC[9] = L"ZAPD.exe";
+static constexpr const wchar_t ZAPD_EXEC[9] = L"ZAPD.exe";
 #else
-constexpr const char ZAPD_EXEC[9] = "ZAPD.out";
+static constexpr const char ZAPD_EXEC[9] = "ZAPD.out";
 #endif
 
-std::queue<std::filesystem::path> xmlQueue;
+static std::queue<std::filesystem::path> xmlQueue;
 
-const char* GetXmlPath(void) {
+static const char* GetXmlPath(void) {
     switch (gRomCrc) {
     case PAL_GC_DBG1:
         return "assets/extractor/xmls/GC_NMQ_D";
@@ -458,7 +538,7 @@ const char* GetXmlPath(void) {
     }
 }
 
-const wchar_t* GetXmlPathW(void) {
+static const wchar_t* GetXmlPathW(void) {
     switch (gRomCrc) {
     case PAL_GC_DBG1:
         return L"assets/extractor/xmls/GC_NMQ_D";
@@ -471,7 +551,7 @@ const wchar_t* GetXmlPathW(void) {
     }
 }
 
-void PrepareForExtraction(const bool useOldStyle, const bool useNewBaserom, const std::string& originalBaseromPath) {
+static void PrepareForExtraction(const bool useOldStyle, const bool useNewBaserom, const std::string& originalBaseromPath) {
     static std::wstring romPath; //Needs to be static for threads
     wchar_t targetBaserom[21];
     // There is probably a better way to do this
@@ -497,7 +577,7 @@ void PrepareForExtraction(const bool useOldStyle, const bool useNewBaserom, cons
     }
 }
 
-void BuildPathQueue(void) {
+static void BuildPathQueue(void) {
     const char* xmlPath = GetXmlPath(); //TODO check for errors or something    
 
     if (std::filesystem::exists(xmlPath) && std::filesystem::is_directory(xmlPath)) {
@@ -510,12 +590,12 @@ void BuildPathQueue(void) {
     }
 }
 
-const wchar_t* GetConfigPath(void) {
+static const wchar_t* GetConfigPath(void) {
     switch (gRomCrc) {
     case PAL_GC_DBG1:
         return L"assets/extractor/Config_GC_NMQ_D.xml";
     case PAL_GC_MQ_DBG:
-        return L"assets/extractor/Config_GC_MQ_D.xml";;
+        return L"assets/extractor/Config_GC_MQ_D.xml";
     case PAL_GC:
         return L"assets/extractor/Config_GC_NMQ_PAL_F.xml";
     default:
@@ -524,7 +604,8 @@ const wchar_t* GetConfigPath(void) {
 }
 
 //TODO audio files
-void ExtractSingleThreaded(const std::wstring& romPath) {
+static void ExtractSingleThreaded(const std::wstring& romPath) {
+#if 0 //TODO linux and ifdefs
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     wchar_t zapdArgs[512];
@@ -550,15 +631,17 @@ void ExtractSingleThreaded(const std::wstring& romPath) {
         xmlQueue.pop();
     }
    // BuildOtr();
+#endif
 }
 
-void BuildOtr(void) {
+static void BuildOtr(void) {
     puts("building OTR file");
 }
 
 
 //TODO audio files foR MQ
-void ExtractNewStyle(const std::wstring& romPath) {
+static void ExtractNewStyle(const std::wstring& romPath) {
+#if 0
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     wchar_t zapdArgs[1024];
@@ -580,7 +663,10 @@ void ExtractNewStyle(const std::wstring& romPath) {
         CloseHandle(pi.hThread);
         sOtrExtractState = OtrExtractState::Done;
     }
+#endif
 }
+
+#ifdef USE_DX9
 
 static bool CreateDeviceD3D(HWND hWnd)
 {
@@ -663,4 +749,4 @@ static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
+#endif
