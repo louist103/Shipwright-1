@@ -8,7 +8,7 @@
 #include <thread>
 #include <filesystem>
 #ifndef _MSC_VER
-#define BSWAP32 bswap_32
+#define BSWAP32 __bswap_32
 #else  //Windows
 #define BSWAP32 _byteswap_ulong
 #endif
