@@ -35,7 +35,7 @@ endif
 O_FILES   := $(foreach f,$(CPP_FILES:.cpp=.o),build/$f)
 
 
-CXXFLAGS += -O2 -DUSE_SDL -I ./src/ImGui/ -I ./src/ImGui/backends/ -std=c++20
+CXXFLAGS += -O2 -DUSE_SDL -I ./src/ImGui/ -I ./src/ImGui/backends/ -std=c++20 -target aarch64-linux-gnu  -mtune=cortex-a57  -fPIE
 
 $(shell mkdir -p $(foreach dir,$(SRC_DIRS),build/$(dir)))
 $(shell mkdir -p build/src/ImGui/backends)
