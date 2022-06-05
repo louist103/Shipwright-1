@@ -1,0 +1,1001 @@
+diff --git a/ExporterTest/CollisionExporter.cpp b/ExporterTest/CollisionExporter.cpp
+index 87b9a05..2545a32 100644
+--- a/ExporterTest/CollisionExporter.cpp
++++ b/ExporterTest/CollisionExporter.cpp
+@@ -4,7 +4,7 @@ void ExporterExample_Collision::Save(ZResource* res, [[maybe_unused]] fs::path o
+                                      BinaryWriter* writer)
+ {
+ 	ZCollisionHeader* col = (ZCollisionHeader*)res;
+-
++	#if 0
+ 	writer->Write(col->absMinX);
+ 	writer->Write(col->absMinY);
+ 	writer->Write(col->absMinZ);
+@@ -59,7 +59,10 @@ void ExporterExample_Collision::Save(ZResource* res, [[maybe_unused]] fs::path o
+ 	writer->Seek(col->polyTypeDefSegmentOffset, SeekOffsetType::Start);
+ 
+ 	for (uint16_t i = 0; i < col->polygonTypes.size(); i++)
+-		writer->Write(col->polygonTypes[i]);
++	{
++		writer->Write(col->polygonTypes[i].data[0]);
++		writer->Write(col->polygonTypes[i].data[1]);
++	}
+ 
+ 	writer->Seek(col->camDataSegmentOffset, SeekOffsetType::Start);
+ 
+@@ -71,4 +74,5 @@ void ExporterExample_Collision::Save(ZResource* res, [[maybe_unused]] fs::path o
+ 	}
+ 
+ 	writer->Seek(oldOffset, SeekOffsetType::Start);
++	#endif
+ }
+diff --git a/ZAPDTR/ZAPD/ZAPD.vcxproj b/ZAPDTR/ZAPD/ZAPD.vcxproj
+index f3bb35a..ffe37e2 100644
+--- a/ZAPDTR/ZAPD/ZAPD.vcxproj
++++ b/ZAPDTR/ZAPD/ZAPD.vcxproj
+@@ -186,6 +186,7 @@ mkdir build\ZAPD
+     <ClCompile Include="WarningHandler.cpp" />
+     <ClCompile Include="ZArray.cpp" />
+     <ClCompile Include="ZBackground.cpp" />
++    <ClCompile Include="ZCamData.cpp" />
+     <ClCompile Include="ZCollisionPoly.cpp" />
+     <ClCompile Include="ZLimb.cpp" />
+     <ClCompile Include="ZMtx.cpp" />
+@@ -236,11 +237,13 @@ mkdir build\ZAPD
+     <ClCompile Include="ZRoom\ZRoom.cpp" />
+     <ClCompile Include="ZRoom\ZRoomCommand.cpp" />
+     <ClCompile Include="ZString.cpp" />
++    <ClCompile Include="ZSurfaceType.cpp" />
+     <ClCompile Include="ZSymbol.cpp" />
+     <ClCompile Include="ZTexture.cpp" />
+     <ClCompile Include="ZTextureAnimation.cpp" />
+     <ClCompile Include="ZVector.cpp" />
+     <ClCompile Include="ZVtx.cpp" />
++    <ClCompile Include="ZWaterbox.cpp" />
+   </ItemGroup>
+   <ItemGroup>
+     <ClInclude Include="..\lib\elfio\elfio\elfio.hpp" />
+@@ -276,6 +279,7 @@ mkdir build\ZAPD
+     <ClInclude Include="ZArray.h" />
+     <ClInclude Include="ZBackground.h" />
+     <ClInclude Include="ZBlob.h" />
++    <ClInclude Include="ZCamData.h" />
+     <ClInclude Include="ZCollision.h" />
+     <ClInclude Include="ZCollisionPoly.h" />
+     <ClInclude Include="ZCutscene.h" />
+@@ -324,11 +328,13 @@ mkdir build\ZAPD
+     <ClInclude Include="ZRoom\ZRoom.h" />
+     <ClInclude Include="ZRoom\ZRoomCommand.h" />
+     <ClInclude Include="ZString.h" />
++    <ClInclude Include="ZSurfaceType.h" />
+     <ClInclude Include="ZSymbol.h" />
+     <ClInclude Include="ZTexture.h" />
+     <ClInclude Include="ZTextureAnimation.h" />
+     <ClInclude Include="ZVector.h" />
+     <ClInclude Include="ZVtx.h" />
++    <ClInclude Include="ZWaterbox.h" />
+   </ItemGroup>
+   <ItemGroup>
+     <Text Include="..\SymbolMap_OoTMqDbg.txt">
+diff --git a/ZAPDTR/ZAPD/ZAPD.vcxproj.filters b/ZAPDTR/ZAPD/ZAPD.vcxproj.filters
+index 4de236f..dc589b6 100644
+--- a/ZAPDTR/ZAPD/ZAPD.vcxproj.filters
++++ b/ZAPDTR/ZAPD/ZAPD.vcxproj.filters
+@@ -288,6 +288,15 @@
+     <ClCompile Include="OtherStructs\CutsceneMM_Commands.cpp">
+       <Filter>Source Files\Z64</Filter>
+     </ClCompile>
++    <ClCompile Include="ZSurfaceType.cpp">
++      <Filter>Source Files\Z64</Filter>
++    </ClCompile>
++    <ClCompile Include="ZWaterbox.cpp">
++      <Filter>Source Files\Z64</Filter>
++    </ClCompile>
++    <ClCompile Include="ZCamData.cpp">
++      <Filter>Source Files\Z64</Filter>
++    </ClCompile>
+   </ItemGroup>
+   <ItemGroup>
+     <ClInclude Include="ZRoom\ZRoom.h">
+@@ -548,6 +557,15 @@
+     <ClInclude Include="OtherStructs\CutsceneMM_Commands.h">
+       <Filter>Header Files\Z64</Filter>
+     </ClInclude>
++    <ClInclude Include="ZSurfaceType.h">
++      <Filter>Header Files\Z64</Filter>
++    </ClInclude>
++    <ClInclude Include="ZWaterbox.h">
++      <Filter>Header Files\Z64</Filter>
++    </ClInclude>
++    <ClInclude Include="ZCamData.h">
++      <Filter>Header Files\Z64</Filter>
++    </ClInclude>
+   </ItemGroup>
+   <ItemGroup>
+     <Text Include="..\SymbolMap_OoTMqDbg.txt">
+diff --git a/ZAPDTR/ZAPD/ZArray.cpp b/ZAPDTR/ZAPD/ZArray.cpp
+index d4f55d6..153ee25 100644
+--- a/ZAPDTR/ZAPD/ZArray.cpp
++++ b/ZAPDTR/ZAPD/ZArray.cpp
+@@ -107,6 +107,9 @@ std::string ZArray::GetBodySourceCode() const
+ 		case ZResourceType::Scalar:
+ 		case ZResourceType::Vertex:
+ 		case ZResourceType::CollisionPoly:
++		case ZResourceType::SurfaceType:
++		case ZResourceType::Waterbox:
++		case ZResourceType::CamData:
+ 			output += resList.at(i)->GetBodySourceCode();
+ 			break;
+ 
+@@ -125,7 +128,7 @@ std::string ZArray::GetBodySourceCode() const
+ size_t ZArray::GetRawDataSize() const
+ {
+ 	size_t size = 0;
+-	for (auto res : resList)
++	for (const auto& res : resList)
+ 		size += res->GetRawDataSize();
+ 	return size;
+ }
+diff --git a/ZAPDTR/ZAPD/ZCamData.cpp b/ZAPDTR/ZAPD/ZCamData.cpp
+new file mode 100644
+index 0000000..adb8a55
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZCamData.cpp
+@@ -0,0 +1,124 @@
++#include "ZCamData.h"
++#include "ZCollision.h"
++
++#include "Globals.h"
++#include "Utils/BitConverter.h"
++#include "Utils/StringHelper.h"
++
++REGISTER_ZFILENODE(CamData, ZCamData);
++
++ZCamData::ZCamData(ZFile* nParent) : ZResource(nParent)
++{
++	collisionParent = nullptr;
++}
++
++ZCamData::ZCamData(ZFile* nParent, ZCollisionHeader* collisionParent)
++	: ZResource(nParent), collisionParent(collisionParent)
++{
++}
++
++ZCamData::~ZCamData()
++{
++}
++
++void ZCamData::ParseRawData()
++{
++	const auto& rawData = parent->GetRawData();
++
++	cameraSType = BitConverter::ToUInt16BE(rawData, rawDataIndex + 0);
++	numCameras = BitConverter::ToInt16BE(rawData, rawDataIndex + 2);
++	camDataList = BitConverter::ToUInt32BE(rawData, rawDataIndex + 4);
++
++	segptr_t camDataListPtr = GETSEGOFFSET(camDataList);
++	if (camDataListPtr == SEGMENTED_NULL)
++	{
++		return;
++	}
++	for (size_t i = 0; i < numCameras; i++)
++	{
++		Vec3s entry;
++		entry.x = BitConverter::ToUInt16BE(rawData, camDataListPtr + ((i* 6) + 0));
++		entry.y = BitConverter::ToUInt16BE(rawData, camDataListPtr + ((i* 6) + 2));
++		entry.z = BitConverter::ToUInt16BE(rawData, camDataListPtr + ((i* 6) + 4));
++		camPosData.push_back(entry);
++	}
++}
++
++void ZCamData::DeclareReferences(const std::string& prefix)
++{
++	std::string declaration;
++	std::string auxName = name;
++	std::string name;
++	std::string arrayName;
++
++	if (name == "")
++		name = GetDefaultName(prefix);
++
++	//parent->AddDeclaration(rawDataIndex, DeclarationAlignment::Align4, GetRawDataSize(),
++	//                       GetSourceTypeName(), name.c_str(), GetBodySourceCode());
++	if (collisionParent != nullptr)
++	{
++		name = StringHelper::Sprintf("%s%s", collisionParent->GetName().c_str(),
++		                          "CamData");
++		arrayName =
++			StringHelper::Sprintf("%sCamDataPos_0x%06X", collisionParent->GetName().c_str(), GETSEGOFFSET(camDataList));
++
++	} 
++
++	if (camDataList == SEGMENTED_NULL)
++	{
++		return;
++	}
++
++	for (const auto& data : camPosData)
++	{
++		declaration += StringHelper::Sprintf("\t{%i, %i, %i},\n", data.x, data.y, data.z);
++	}
++
++	
++
++	//enrui_sceneCollisionHeader_0003B4CamPosData
++	parent->AddDeclarationArray(GETSEGOFFSET(camDataList), DeclarationAlignment::Align4, numCameras * 6, "Vec3s", arrayName.c_str(), numCameras,
++	                            declaration);
++}
++
++std::string ZCamData::GetBodySourceCode() const
++{
++	std::string camPosDataString;
++
++	if (camDataList == SEGMENTED_NULL)
++	{
++		camPosDataString = "NULL";
++	}
++	else
++	{
++		Globals::Instance->GetSegmentedPtrName(camDataList, parent, "Vec3s", camPosDataString);
++	}
++
++	return StringHelper::Sprintf("{0x%04X, %i, %s}", cameraSType, numCameras, camPosDataString.c_str());
++}
++
++std::string ZCamData::GetDefaultName(const std::string& prefix) const
++{
++	return StringHelper::Sprintf("%sCamData_%_06X", prefix.c_str(), rawDataIndex);
++}
++
++ZResourceType ZCamData::GetResourceType() const
++{
++	return ZResourceType::CamData;
++}
++
++size_t ZCamData::GetRawDataSize() const
++{
++	return 8;
++}
++
++std::string ZCamData::GetSourceTypeName() const
++{
++	return "CamData";
++}
++
++bool ZCamData::DoesSupportArray() const
++{
++	return true;
++}
+diff --git a/ZAPDTR/ZAPD/ZCamData.h b/ZAPDTR/ZAPD/ZCamData.h
+new file mode 100644
+index 0000000..a9a2f18
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZCamData.h
+@@ -0,0 +1,36 @@
++#pragma once
++
++#include "ZFile.h"
++#include "ZResource.h"
++#include "Vec3s.h"
++
++class ZCollisionHeader;
++
++class ZCamData : public ZResource
++{
++public:
++	ZCollisionHeader* collisionParent;
++	segptr_t camDataList;
++	uint16_t cameraSType;
++	int16_t numCameras;
++	std::vector<Vec3s> camPosData;
++
++	//Vec3s* camPosData;
++
++	ZCamData(ZFile* nParent);
++	ZCamData(ZFile* nParent, ZCollisionHeader* collisionParent);
++	~ZCamData();
++
++	void ParseRawData() override;
++	void DeclareReferences(const std::string& prefix) override;
++
++	std::string GetBodySourceCode() const override;
++	std::string GetDefaultName(const std::string& prefix) const override;
++
++	std::string GetSourceTypeName() const override;
++	ZResourceType GetResourceType() const override;
++
++	bool DoesSupportArray() const override;
++
++	size_t GetRawDataSize() const override;
++};
+\ No newline at end of file
+diff --git a/ZAPDTR/ZAPD/ZCollision.cpp b/ZAPDTR/ZAPD/ZCollision.cpp
+index 992332d..76f05d5 100644
+--- a/ZAPDTR/ZAPD/ZCollision.cpp
++++ b/ZAPDTR/ZAPD/ZCollision.cpp
+@@ -16,7 +16,7 @@ ZCollisionHeader::ZCollisionHeader(ZFile* nParent) : ZResource(nParent)
+ 
+ ZCollisionHeader::~ZCollisionHeader()
+ {
+-	delete camData;
++	//delete camData;
+ }
+ 
+ void ZCollisionHeader::ParseRawData()
+@@ -51,7 +51,7 @@ void ZCollisionHeader::ParseRawData()
+ 	vertices.reserve(numVerts);
+ 	polygons.reserve(numPolygons);
+ 
+-	uint32_t currentPtr = vtxSegmentOffset;
++	offset_t currentPtr = vtxSegmentOffset;
+ 
+ 	for (uint16_t i = 0; i < numVerts; i++)
+ 	{
+@@ -61,7 +61,7 @@ void ZCollisionHeader::ParseRawData()
+ 		currentPtr += vec.GetRawDataSize();
+ 		vertices.push_back(vec);
+ 	}
+-	
++
+ 	for (uint16_t i = 0; i < numPolygons; i++)
+ 	{
+ 		ZCollisionPoly poly(parent);
+@@ -72,14 +72,20 @@ void ZCollisionHeader::ParseRawData()
+ 
+ 	uint16_t highestPolyType = 0;
+ 
+-	for (ZCollisionPoly poly : polygons)
++	for (const ZCollisionPoly& poly : polygons)
+ 	{
+ 		if (poly.type > highestPolyType)
+ 			highestPolyType = poly.type;
+ 	}
++	polygonTypes.reserve(highestPolyType);
+ 	for (uint16_t i = 0; i < highestPolyType + 1; i++)
+-		polygonTypes.push_back(
+-			BitConverter::ToUInt64BE(rawData, polyTypeDefSegmentOffset + (i * 8)));
++	{
++		ZSurfaceType surfaceType(parent);
++
++		surfaceType.SetRawDataIndex(polyTypeDefSegmentOffset + (i * 8));
++		surfaceType.ParseRawData();
++		polygonTypes.push_back(surfaceType);
++	}
+ 
+ 	if (camDataAddress != SEGMENTED_NULL)
+ 	{
+@@ -96,32 +102,51 @@ void ZCollisionHeader::ParseRawData()
+ 		// - Vertices
+ 		// - WaterBoxes
+ 		// - CollisionHeader
+-		offset_t upperCameraBoundary = polyTypeDefSegmentOffset;
+-		if (upperCameraBoundary == 0)
++		upperCameraBoundary = polyTypeDefSegmentOffset;
++		if (upperCameraBoundary == SEGMENTED_NULL)
+ 		{
+ 			upperCameraBoundary = polySegmentOffset;
+ 		}
+-		if (upperCameraBoundary == 0)
++		if (upperCameraBoundary == SEGMENTED_NULL)
+ 		{
+ 			upperCameraBoundary = vtxSegmentOffset;
+ 		}
+-		if (upperCameraBoundary == 0)
++		if (upperCameraBoundary == SEGMENTED_NULL)
+ 		{
+ 			upperCameraBoundary = waterBoxSegmentOffset;
+ 		}
+-		if (upperCameraBoundary == 0)
++		if (upperCameraBoundary == SEGMENTED_NULL)
+ 		{
+ 			upperCameraBoundary = rawDataIndex;
+ 		}
+ 
+-		camData =
+-			new CameraDataList(parent, name, rawData, camDataSegmentOffset, upperCameraBoundary);
++		if (upperCameraBoundary > camDataSegmentOffset)  // Hack for sharp ocarina
++		{
++			size_t numElements = (upperCameraBoundary - camDataSegmentOffset) / 8;
++
++			for (size_t i = 0; i < numElements; i++)
++			{
++				ZCamData camData(parent, this);
++				camData.SetRawDataIndex(camDataSegmentOffset + (i * camData.GetRawDataSize()));
++				camData.ParseRawData();
++				camData.DeclareReferences("uintptr_t"); // Can be anything.
++				this->camData.push_back(camData);
++			}
++			
++		}
++	}
++
++	waterBoxes.reserve(numWaterBoxes);
++
++	for (int32_t i = 0; i < numWaterBoxes; i++)
++	{
++		ZWaterbox waterbox(parent);
++
++		waterbox.SetRawDataIndex(waterBoxSegmentOffset + (i * (Globals::Instance->game == ZGame::OOT_SW97 ? 12 : 16)));
++		waterbox.ParseRawData();
++		waterBoxes.push_back(waterbox);
+ 	}
+ 
+-	for (uint16_t i = 0; i < numWaterBoxes; i++)
+-		waterBoxes.push_back(WaterBoxHeader(
+-			rawData,
+-			waterBoxSegmentOffset + (i * (Globals::Instance->game == ZGame::OOT_SW97 ? 12 : 16))));
+ }
+ 
+ void ZCollisionHeader::DeclareReferences(const std::string& prefix)
+@@ -142,8 +167,9 @@ void ZCollisionHeader::DeclareReferences(const std::string& prefix)
+ 				declaration += "\n";
+ 		}
+ 
+-		parent->AddDeclarationArray(
+-			waterBoxSegmentOffset, DeclarationAlignment::Align4, 16 * waterBoxes.size(), "WaterBox",
++		parent->AddDeclarationArray(waterBoxSegmentOffset, DeclarationAlignment::Align4,
++		                            waterBoxes[0].GetRawDataSize() * waterBoxes.size(),
++		                            waterBoxes[0].GetSourceTypeName().c_str(),
+ 			StringHelper::Sprintf("%sWaterBoxes", auxName.c_str()), waterBoxes.size(), declaration);
+ 	}
+ 
+@@ -158,16 +184,17 @@ void ZCollisionHeader::DeclareReferences(const std::string& prefix)
+ 				declaration += "\n";
+ 		}
+ 
+-		parent->AddDeclarationArray(
+-			polySegmentOffset, DeclarationAlignment::Align4, polygons.size() * 16, polygons[0].GetSourceTypeName().c_str(),
+-			StringHelper::Sprintf("%sPolygons", auxName.c_str()), polygons.size(), declaration);
++		parent->AddDeclarationArray(polySegmentOffset, DeclarationAlignment::Align4,
++		                            polygons.size() * polygons[0].GetRawDataSize(),
++		                            polygons[0].GetSourceTypeName().c_str(),
++		                            StringHelper::Sprintf("%sPolygons", auxName.c_str()),
++		                            polygons.size(), declaration);
+ 	}
+ 
+ 	declaration.clear();
+ 	for (size_t i = 0; i < polygonTypes.size(); i++)
+ 	{
+-		declaration += StringHelper::Sprintf("\t{ 0x%08lX, 0x%08lX },", polygonTypes[i] >> 32,
+-		                                     polygonTypes[i] & 0xFFFFFFFF);
++		declaration += StringHelper::Sprintf("\t%s,", polygonTypes[i].GetBodySourceCode().c_str());
+ 
+ 		if (i < polygonTypes.size() - 1)
+ 			declaration += "\n";
+@@ -175,12 +202,29 @@ void ZCollisionHeader::DeclareReferences(const std::string& prefix)
+ 
+ 	if (polyTypeDefAddress != 0)
+ 		parent->AddDeclarationArray(polyTypeDefSegmentOffset, DeclarationAlignment::Align4,
+-		                            polygonTypes.size() * 8, "SurfaceType",
++		                            polygonTypes.size() * 8,
++		                            polygonTypes[0].GetSourceTypeName().c_str(),
+ 		                            StringHelper::Sprintf("%sSurfaceType", auxName.c_str()),
+ 		                            polygonTypes.size(), declaration);
+ 
+ 	declaration.clear();
+ 
++
++	for (const auto& camDataEntry : camData)
++	{
++		declaration += StringHelper::Sprintf("\t%s,", camDataEntry.GetBodySourceCode().c_str());
++	}
++
++	if ((camDataAddress != 0) && (upperCameraBoundary > camDataSegmentOffset))
++	{
++		parent->AddDeclarationArray(
++			camDataSegmentOffset, DeclarationAlignment::Align4,
++			camData.size() * camData[0].GetRawDataSize(), camData[0].GetSourceTypeName(),
++			StringHelper::Sprintf("%sCamData", auxName.c_str()), camData.size(), declaration);
++	}
++	declaration.clear();
++
++
+ 	if (vertices.size() > 0)
+ 	{
+ 		declaration.clear();
+@@ -254,27 +298,7 @@ size_t ZCollisionHeader::GetRawDataSize() const
+ {
+ 	return 44;
+ }
+-
+-WaterBoxHeader::WaterBoxHeader(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex)
+-{
+-	xMin = BitConverter::ToInt16BE(rawData, rawDataIndex + 0);
+-	ySurface = BitConverter::ToInt16BE(rawData, rawDataIndex + 2);
+-	zMin = BitConverter::ToInt16BE(rawData, rawDataIndex + 4);
+-	xLength = BitConverter::ToInt16BE(rawData, rawDataIndex + 6);
+-	zLength = BitConverter::ToInt16BE(rawData, rawDataIndex + 8);
+-
+-	if (Globals::Instance->game == ZGame::OOT_SW97)
+-		properties = BitConverter::ToInt16BE(rawData, rawDataIndex + 10);
+-	else
+-		properties = BitConverter::ToInt32BE(rawData, rawDataIndex + 12);
+-}
+-
+-std::string WaterBoxHeader::GetBodySourceCode() const
+-{
+-	return StringHelper::Sprintf("%i, %i, %i, %i, %i, 0x%08X", xMin, ySurface, zMin, xLength,
+-	                             zLength, properties);
+-}
+-
++#if 0
+ CameraDataList::CameraDataList(ZFile* parent, const std::string& prefix,
+                                const std::vector<uint8_t>& rawData, offset_t rawDataIndex,
+                                offset_t upperCameraBoundary)
+@@ -375,3 +399,4 @@ CameraPositionData::CameraPositionData(const std::vector<uint8_t>& rawData, uint
+ 	y = BitConverter::ToInt16BE(rawData, rawDataIndex + 2);
+ 	z = BitConverter::ToInt16BE(rawData, rawDataIndex + 4);
+ }
++#endif
+diff --git a/ZAPDTR/ZAPD/ZCollision.h b/ZAPDTR/ZAPD/ZCollision.h
+index 7481a85..e12471d 100644
+--- a/ZAPDTR/ZAPD/ZCollision.h
++++ b/ZAPDTR/ZAPD/ZCollision.h
+@@ -1,40 +1,15 @@
+ #pragma once
+ 
++#include "ZCollisionPoly.h"
+ #include "ZFile.h"
+ #include "ZResource.h"
+ #include "ZRoom/ZRoom.h"
++#include "ZCamData.h"
++#include "ZSurfaceType.h"
++#include "ZWaterbox.h"
+ #include "ZVector.h"
+-#include "ZCollisionPoly.h"
+ 
+ #if 0
+-class PolygonEntry
+-{
+-public:
+-	uint16_t type;
+-	uint16_t vtxA, vtxB, vtxC;
+-	uint16_t a, b, c, d;
+-
+-	PolygonEntry(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
+-};
+-#endif
+-
+-class WaterBoxHeader
+-{
+-public:
+-	WaterBoxHeader(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
+-
+-	std::string GetBodySourceCode() const;
+-
+-protected:
+-	int16_t xMin;
+-	int16_t ySurface;
+-	int16_t zMin;
+-	int16_t xLength;
+-	int16_t zLength;
+-	int16_t pad;
+-	int32_t properties;
+-};
+-
+ class CameraPositionData
+ {
+ public:
+@@ -61,6 +36,7 @@ public:
+ 	               offset_t rawDataIndex, offset_t upperCameraBoundary);
+ 	~CameraDataList();
+ };
++#endif
+ 
+ class ZCollisionHeader : public ZResource
+ {
+@@ -73,18 +49,20 @@ public:
+ 	segptr_t polyAddress;
+ 	segptr_t polyTypeDefAddress;
+ 	segptr_t camDataAddress;
++	offset_t upperCameraBoundary;
+ 
+ 	int32_t numWaterBoxes;
+ 	segptr_t waterBoxAddress;
+ 
+-	uint32_t vtxSegmentOffset, polySegmentOffset, polyTypeDefSegmentOffset, camDataSegmentOffset,
++	offset_t vtxSegmentOffset, polySegmentOffset, polyTypeDefSegmentOffset, camDataSegmentOffset,
+ 		waterBoxSegmentOffset;
+ 
+ 	std::vector<ZVector> vertices;
+ 	std::vector<ZCollisionPoly> polygons;
+-	std::vector<uint64_t> polygonTypes;
+-	std::vector<WaterBoxHeader> waterBoxes;
+-	CameraDataList* camData = nullptr;
++	std::vector<ZSurfaceType> polygonTypes;
++	std::vector<ZWaterbox> waterBoxes;
++	std::vector<ZCamData> camData;
++	//CameraDataList* camData = nullptr;
+ 
+ 	ZCollisionHeader(ZFile* nParent);
+ 	~ZCollisionHeader();
+diff --git a/ZAPDTR/ZAPD/ZCollisionPoly.cpp b/ZAPDTR/ZAPD/ZCollisionPoly.cpp
+index eb2c14a..f017046 100644
+--- a/ZAPDTR/ZAPD/ZCollisionPoly.cpp
++++ b/ZAPDTR/ZAPD/ZCollisionPoly.cpp
+@@ -16,61 +16,63 @@ ZCollisionPoly::~ZCollisionPoly()
+ 
+ void ZCollisionPoly::ParseRawData()
+ {
+-    const auto& rawData = parent->GetRawData();
+-    type = BitConverter::ToUInt16BE(rawData, rawDataIndex + 0);
+-    
+-    vtxA = BitConverter::ToUInt16BE(rawData, rawDataIndex + 2);
+-    vtxB = BitConverter::ToUInt16BE(rawData, rawDataIndex + 4);
+-    vtxC = BitConverter::ToUInt16BE(rawData, rawDataIndex + 6);
+-
+-    normX = BitConverter::ToUInt16BE(rawData, rawDataIndex + 8);
+-    normY = BitConverter::ToUInt16BE(rawData, rawDataIndex + 10);
+-    normZ = BitConverter::ToUInt16BE(rawData, rawDataIndex + 12);
+-
+-    dist = BitConverter::ToUInt16BE(rawData, rawDataIndex + 14);
++	const auto& rawData = parent->GetRawData();
++	type = BitConverter::ToUInt16BE(rawData, rawDataIndex + 0);
++
++	vtxA = BitConverter::ToUInt16BE(rawData, rawDataIndex + 2);
++	vtxB = BitConverter::ToUInt16BE(rawData, rawDataIndex + 4);
++	vtxC = BitConverter::ToUInt16BE(rawData, rawDataIndex + 6);
++
++	normX = BitConverter::ToUInt16BE(rawData, rawDataIndex + 8);
++	normY = BitConverter::ToUInt16BE(rawData, rawDataIndex + 10);
++	normZ = BitConverter::ToUInt16BE(rawData, rawDataIndex + 12);
++
++	dist = BitConverter::ToUInt16BE(rawData, rawDataIndex + 14);
+ }
+ 
+ void ZCollisionPoly::DeclareReferences(const std::string& prefix)
+ {
+-    std::string declaration;
+-    std::string auxName = name;
++	std::string declaration;
++	std::string auxName = name;
+ 
+-    if (name == "")
+-        auxName = GetDefaultName(prefix);
++	if (name == "")
++		auxName = GetDefaultName(prefix);
+ 
+-    parent->AddDeclaration(rawDataIndex, DeclarationAlignment::Align4,GetRawDataSize(), GetSourceTypeName(), name.c_str(),GetBodySourceCode());
++	parent->AddDeclaration(rawDataIndex, DeclarationAlignment::Align4, GetRawDataSize(),
++	                       GetSourceTypeName(), name.c_str(), GetBodySourceCode());
+ }
+ 
+ std::string ZCollisionPoly::GetBodySourceCode() const
+ {
+-    std::string declaration;
++	std::string declaration;
+ 
+-    declaration += StringHelper::Sprintf("{0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X}", type, vtxA, vtxB, vtxC, normX, normY, normZ, dist);
+-    return declaration;
++	declaration +=
++		StringHelper::Sprintf("{0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X, 0x%04X}",
++	                          type, vtxA, vtxB, vtxC, normX, normY, normZ, dist);
++	return declaration;
+ }
+ 
+ std::string ZCollisionPoly::GetDefaultName(const std::string& prefix) const
+ {
+-    return StringHelper::Sprintf("%sCollisionPoly_%06X", prefix.c_str(), rawDataIndex);
++	return StringHelper::Sprintf("%sCollisionPoly_%06X", prefix.c_str(), rawDataIndex);
+ }
+ 
+-
+ ZResourceType ZCollisionPoly::GetResourceType() const
+ {
+-    return ZResourceType::CollisionPoly;
++	return ZResourceType::CollisionPoly;
+ }
+ 
+ size_t ZCollisionPoly::GetRawDataSize() const
+ {
+-    return 16;
++	return 16;
+ }
+ 
+ std::string ZCollisionPoly::GetSourceTypeName() const
+ {
+-    return "CollisionPoly";
++	return "CollisionPoly";
+ }
+ 
+ bool ZCollisionPoly::DoesSupportArray() const
+ {
+-    return true;
+-}
+\ No newline at end of file
++	return true;
++}
+diff --git a/ZAPDTR/ZAPD/ZCollisionPoly.h b/ZAPDTR/ZAPD/ZCollisionPoly.h
+index 9596d22..64b98ba 100644
+--- a/ZAPDTR/ZAPD/ZCollisionPoly.h
++++ b/ZAPDTR/ZAPD/ZCollisionPoly.h
+@@ -3,28 +3,27 @@
+ #include "ZFile.h"
+ #include "ZResource.h"
+ 
+-
+ class ZCollisionPoly : public ZResource
+ {
+-public: 
+-    uint16_t type;
++public:
++	uint16_t type;
+ 	uint16_t vtxA, vtxB, vtxC;
+ 	uint16_t normX, normY, normZ;
+-    uint16_t dist;
++	uint16_t dist;
+ 
+-    ZCollisionPoly(ZFile* nParent);
+-    ~ZCollisionPoly();
++	ZCollisionPoly(ZFile* nParent);
++	~ZCollisionPoly();
+ 
+-    void ParseRawData() override;
+-    void DeclareReferences(const std::string& prefix) override;
++	void ParseRawData() override;
++	void DeclareReferences(const std::string& prefix) override;
+ 
+-    std::string GetBodySourceCode() const override;
+-    std::string GetDefaultName(const std::string& prefix) const override;
++	std::string GetBodySourceCode() const override;
++	std::string GetDefaultName(const std::string& prefix) const override;
+ 
+-    std::string GetSourceTypeName() const override;
+-    ZResourceType GetResourceType() const override;
++	std::string GetSourceTypeName() const override;
++	ZResourceType GetResourceType() const override;
+ 
+-    bool DoesSupportArray() const override;
++	bool DoesSupportArray() const override;
+ 
+-    size_t GetRawDataSize() const override;
++	size_t GetRawDataSize() const override;
+ };
+\ No newline at end of file
+diff --git a/ZAPDTR/ZAPD/ZResource.h b/ZAPDTR/ZAPD/ZResource.h
+index 3598467..c070e0c 100644
+--- a/ZAPDTR/ZAPD/ZResource.h
++++ b/ZAPDTR/ZAPD/ZResource.h
+@@ -30,6 +30,7 @@ enum class ZResourceType
+ 	AltHeader,
+ 	Background,
+ 	Blob,
++	CamData,
+ 	CollisionHeader,
+ 	CollisionPoly,
+ 	Cutscene,
+@@ -46,10 +47,12 @@ enum class ZResourceType
+ 	Scene,
+ 	Skeleton,
+ 	String,
++	SurfaceType,
+ 	Symbol,
+ 	Texture,
+ 	TextureAnimation,
+ 	TextureAnimationParams,
++	Waterbox,
+ 	Vector,
+ 	Vertex,
+ };
+diff --git a/ZAPDTR/ZAPD/ZSurfaceType.cpp b/ZAPDTR/ZAPD/ZSurfaceType.cpp
+new file mode 100644
+index 0000000..31ccdb3
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZSurfaceType.cpp
+@@ -0,0 +1,65 @@
++#include "ZSurfaceType.h"
++
++#include "Globals.h"
++#include "Utils/BitConverter.h"
++#include "Utils/StringHelper.h"
++
++REGISTER_ZFILENODE(SurfaceType, ZSurfaceType);
++
++ZSurfaceType::ZSurfaceType(ZFile* nParent) : ZResource(nParent)
++{
++}
++
++ZSurfaceType::~ZSurfaceType()
++{
++}
++
++void ZSurfaceType::ParseRawData()
++{
++	const auto& rawData = parent->GetRawData();
++
++	data[0] = BitConverter::ToUInt32BE(rawData, rawDataIndex + 0);
++	data[1] = BitConverter::ToUInt32BE(rawData, rawDataIndex + 4);
++}
++
++void ZSurfaceType::DeclareReferences(const std::string& prefix)
++{
++	std::string declaration;
++	std::string auxName = name;
++
++	if (name == "")
++		auxName = GetDefaultName(prefix);
++
++	parent->AddDeclaration(rawDataIndex, DeclarationAlignment::Align4, GetRawDataSize(),
++	                       GetSourceTypeName(), name.c_str(), GetBodySourceCode());
++}
++
++std::string ZSurfaceType::GetBodySourceCode() const
++{
++	return StringHelper::Sprintf("{0x%08X, 0x%08X}", data[0], data[1]);
++}
++
++std::string ZSurfaceType::GetDefaultName(const std::string& prefix) const
++{
++	return StringHelper::Sprintf("%sSurfaceType_%06X", prefix.c_str(), rawDataIndex);
++}
++
++ZResourceType ZSurfaceType::GetResourceType() const
++{
++	return ZResourceType::SurfaceType;
++}
++
++size_t ZSurfaceType::GetRawDataSize() const
++{
++	return 8;
++}
++
++std::string ZSurfaceType::GetSourceTypeName() const
++{
++	return "SurfaceType";
++}
++
++bool ZSurfaceType::DoesSupportArray() const
++{
++	return true;
++}
+\ No newline at end of file
+diff --git a/ZAPDTR/ZAPD/ZSurfaceType.h b/ZAPDTR/ZAPD/ZSurfaceType.h
+new file mode 100644
+index 0000000..283daf6
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZSurfaceType.h
+@@ -0,0 +1,27 @@
++#pragma once
++
++#include <array>
++#include "ZFile.h"
++#include "ZResource.h"
++
++class ZSurfaceType : public ZResource
++{
++public:
++	std::array<uint32_t, 2> data;
++
++	ZSurfaceType(ZFile* nParent);
++	~ZSurfaceType();
++
++	void ParseRawData() override;
++	void DeclareReferences(const std::string& prefix) override;
++
++	std::string GetBodySourceCode() const override;
++	std::string GetDefaultName(const std::string& prefix) const override;
++
++	std::string GetSourceTypeName() const override;
++	ZResourceType GetResourceType() const override;
++
++	bool DoesSupportArray() const override;
++
++	size_t GetRawDataSize() const override;
++};
+diff --git a/ZAPDTR/ZAPD/ZWaterbox.cpp b/ZAPDTR/ZAPD/ZWaterbox.cpp
+new file mode 100644
+index 0000000..7f7abbc
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZWaterbox.cpp
+@@ -0,0 +1,74 @@
++#include "ZWaterbox.h"
++
++#include "Globals.h"
++#include "Utils/BitConverter.h"
++#include "Utils/StringHelper.h"
++
++REGISTER_ZFILENODE(Waterbox, ZWaterbox);
++
++ZWaterbox::ZWaterbox(ZFile* nParent) : ZResource(nParent)
++{
++}
++
++ZWaterbox::~ZWaterbox()
++{
++}
++
++void ZWaterbox::ParseRawData()
++{
++    const auto& rawData = parent->GetRawData();
++
++    xMin = BitConverter::ToInt16BE(rawData, rawDataIndex + 0);
++    ySurface = BitConverter::ToInt16BE(rawData, rawDataIndex + 2);
++    zMin = BitConverter::ToInt16BE(rawData, rawDataIndex + 4);
++    xLength = BitConverter::ToInt16BE(rawData, rawDataIndex + 6);
++    zLength = BitConverter::ToInt16BE(rawData, rawDataIndex + 8);
++
++    if (Globals::Instance->game == ZGame::OOT_SW97)
++        properties = BitConverter::ToInt16BE(rawData, rawDataIndex + 10);
++    else
++        properties = BitConverter::ToInt32BE(rawData, rawDataIndex + 12);
++}
++
++void ZWaterbox::DeclareReferences(const std::string& prefix)
++{
++    std::string declaration;
++    std::string auxName = name;
++
++    if (name == "")
++        auxName = GetDefaultName(prefix);
++
++    parent->AddDeclaration(rawDataIndex, DeclarationAlignment::Align4, GetRawDataSize(),
++                           GetSourceTypeName(), name.c_str(), GetBodySourceCode());
++}
++
++std::string ZWaterbox::GetBodySourceCode() const
++{
++    return StringHelper::Sprintf("%i, %i, %i, %i, %i, 0x%08X", xMin, ySurface, zMin, xLength,
++                                 zLength, properties);
++}
++
++std::string ZWaterbox::GetDefaultName(const std::string& prefix) const
++{
++    return StringHelper::Sprintf("%sWaterBoxes_%06X", prefix.c_str(), rawDataIndex);
++}
++
++ZResourceType ZWaterbox::GetResourceType() const
++{
++    return ZResourceType::Waterbox;
++}
++
++size_t ZWaterbox::GetRawDataSize() const
++{
++    return 16;
++}
++
++std::string ZWaterbox::GetSourceTypeName() const
++{
++    return "WaterBox";
++}
++
++bool ZWaterbox::DoesSupportArray() const
++{
++    return true;
++}
+diff --git a/ZAPDTR/ZAPD/ZWaterbox.h b/ZAPDTR/ZAPD/ZWaterbox.h
+new file mode 100644
+index 0000000..54364ff
+--- /dev/null
++++ b/ZAPDTR/ZAPD/ZWaterbox.h
+@@ -0,0 +1,31 @@
++#pragma once
++
++#include "ZFile.h"
++#include "ZResource.h"
++
++class ZWaterbox : public ZResource
++{
++public:
++	int16_t xMin;
++	int16_t ySurface;
++	int16_t zMin;
++	int16_t xLength;
++	int16_t zLength;
++	int32_t properties;
++
++	ZWaterbox(ZFile* nParent);
++	~ZWaterbox();
++
++	void ParseRawData() override;
++	void DeclareReferences(const std::string& prefix) override;
++
++	std::string GetBodySourceCode() const override;
++	std::string GetDefaultName(const std::string& prefix) const override;
++
++	std::string GetSourceTypeName() const override;
++	ZResourceType GetResourceType() const override;
++
++	bool DoesSupportArray() const override;
++
++	size_t GetRawDataSize() const override;
++};

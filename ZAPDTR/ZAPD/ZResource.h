@@ -31,7 +31,10 @@ enum class ZResourceType
 	Background,
 	Blob,
 	CollisionHeader,
+	CollisionPoly,
 	Cutscene,
+	CamData,
+
 	DisplayList,
 	Limb,
 	LimbTable,
@@ -44,12 +47,15 @@ enum class ZResourceType
 	Scene,
 	Skeleton,
 	String,
+	SurfaceType,
 	Symbol,
 	Texture,
 	TextureAnimation,
 	TextureAnimationParams,
 	Vector,
 	Vertex,
+	Waterbox,
+
 	Text
 };
 
@@ -151,6 +157,11 @@ public:
 	[[nodiscard]] const std::string& GetOutName() const;
 	void SetOutName(const std::string& nName);
 	[[nodiscard]] offset_t GetRawDataIndex() const;
+	void SetRawDataIndex(offset_t nRawDataIndex);
+
+
+
+
 	/**
 	 * The size of the current struct being extracted, not counting data referenced by it
 	 */

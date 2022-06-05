@@ -1,5 +1,6 @@
 #include "CollisionExporter.h"
 #include <Resource.h>
+#include "Globals.h"
 
 void OTRExporter_Collision::Save(ZResource* res, const fs::path& outPath, BinaryWriter* writer)
 {
@@ -32,41 +33,53 @@ void OTRExporter_Collision::Save(ZResource* res, const fs::path& outPath, Binary
 		writer->Write(col->polygons[i].vtxA);
 		writer->Write(col->polygons[i].vtxB);
 		writer->Write(col->polygons[i].vtxC);
-		writer->Write(col->polygons[i].a);
-		writer->Write(col->polygons[i].b);
-		writer->Write(col->polygons[i].c);
-		writer->Write(col->polygons[i].d);
+		writer->Write(col->polygons[i].normX);
+		writer->Write(col->polygons[i].normY);
+		writer->Write(col->polygons[i].normZ);
+		writer->Write(col->polygons[i].dist);
 	}
 
 	writer->Write((uint32_t)col->polygonTypes.size());
 
-	for (uint16_t i = 0; i < col->polygonTypes.size(); i++)
-		writer->Write(col->polygonTypes[i]);
-
-	writer->Write((uint32_t)col->camData->entries.size());
-
-	for (auto entry : col->camData->entries)
-	{
-		auto camPosDecl = col->parent->GetDeclarationRanged(Seg2Filespace(entry->cameraPosDataSeg, col->parent->baseAddress));
-		
-		int idx = 0;
-
-		if (camPosDecl != nullptr)
-			idx = ((entry->cameraPosDataSeg & 0x00FFFFFF) - camPosDecl->address) / 6;
-		
-		writer->Write(entry->cameraSType);
-		writer->Write(entry->numData);
-		writer->Write((uint32_t)idx);
+	for (uint16_t i = 0; i < col->polygonTypes.size(); i++) {
+		writer->Write(col->polygonTypes[i].data[0]);
+		writer->Write(col->polygonTypes[i].data[1]);
 	}
 
-	writer->Write((uint32_t)col->camData->cameraPositionData.size());
+	for (const auto& file : Globals::Instance->files) {
+		for (const auto& resource : file->resources) {
+			if (resource->GetRawDataIndex() == col->camDataAddress) {
+				ZCamData* camData = (ZCamData*)resource;
 
-	for (auto entry : col->camData->cameraPositionData)
-	{
-		writer->Write(entry->x);
-		writer->Write(entry->y);
-		writer->Write(entry->z);
+				writer->Write((uint32_t)camData->camPosData.size());
+
+				for (auto entry : camData)
+				{
+					auto camPosDecl = col->parent->GetDeclarationRanged(Seg2Filespace(entry->cameraPosDataSeg, col->parent->baseAddress));
+
+					int idx = 0;
+
+					if (camPosDecl != nullptr)
+						idx = ((entry->cameraPosDataSeg & 0x00FFFFFF) - camPosDecl->address) / 6;
+
+					writer->Write(entry->cameraSType);
+					writer->Write(entry->numData);
+					writer->Write((uint32_t)idx);
+				}
+
+				writer->Write((uint32_t)camData->camPosData.size());
+
+				for (auto entry : camData->camPosData)
+				{
+					writer->Write(entry.x);
+					writer->Write(entry.y);
+					writer->Write(entry.z);
+				}
+
+			}
+		}
 	}
+
 
 	writer->Write((uint32_t)col->waterBoxes.size());
 

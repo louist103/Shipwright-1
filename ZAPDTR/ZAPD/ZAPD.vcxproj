@@ -30,26 +30,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -196,6 +196,8 @@
     <ClCompile Include="yaz0\yaz0.cpp" />
     <ClCompile Include="ZArray.cpp" />
     <ClCompile Include="ZBackground.cpp" />
+    <ClCompile Include="ZCamData.cpp" />
+    <ClCompile Include="ZCollisionPoly.cpp" />
     <ClCompile Include="ZCutsceneMM.cpp" />
     <ClCompile Include="ZLimb.cpp" />
     <ClCompile Include="ZMtx.cpp" />
@@ -247,12 +249,14 @@
     <ClCompile Include="ZRoom\ZRoom.cpp" />
     <ClCompile Include="ZRoom\ZRoomCommand.cpp" />
     <ClCompile Include="ZString.cpp" />
+    <ClCompile Include="ZSurfaceType.cpp" />
     <ClCompile Include="ZSymbol.cpp" />
     <ClCompile Include="ZText.cpp" />
     <ClCompile Include="ZTexture.cpp" />
     <ClCompile Include="ZTextureAnimation.cpp" />
     <ClCompile Include="ZVector.cpp" />
     <ClCompile Include="ZVtx.cpp" />
+    <ClCompile Include="ZWaterbox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\lib\elfio\elfio\elfio.hpp" />
@@ -290,7 +294,9 @@
     <ClInclude Include="ZArray.h" />
     <ClInclude Include="ZBackground.h" />
     <ClInclude Include="ZBlob.h" />
+    <ClInclude Include="ZCamData.h" />
     <ClInclude Include="ZCollision.h" />
+    <ClInclude Include="ZCollisionPoly.h" />
     <ClInclude Include="ZCutscene.h" />
     <ClInclude Include="ZCutsceneMM.h" />
     <ClInclude Include="ZDisplayList.h" />
@@ -339,12 +345,14 @@
     <ClInclude Include="ZRoom\ZRoom.h" />
     <ClInclude Include="ZRoom\ZRoomCommand.h" />
     <ClInclude Include="ZString.h" />
+    <ClInclude Include="ZSurfaceType.h" />
     <ClInclude Include="ZSymbol.h" />
     <ClInclude Include="ZText.h" />
     <ClInclude Include="ZTexture.h" />
     <ClInclude Include="ZTextureAnimation.h" />
     <ClInclude Include="ZVector.h" />
     <ClInclude Include="ZVtx.h" />
+    <ClInclude Include="ZWaterbox.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\SymbolMap_OoTMqDbg.txt">
