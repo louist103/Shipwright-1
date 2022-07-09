@@ -1,7 +1,7 @@
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#define USE_SDL 1
+
 #include <array>
 #include <map>
 #include <queue>
@@ -120,7 +120,7 @@ static void printRomInfo(void) {
 }
 
 //Uncomment other versions to add support for them
-static std::map<const uint32_t, const std::array<unsigned char, 16>> md5Map {
+static std::map<constexpr uint32_t, const std::array<constexpr unsigned char, 16>> md5Map {
     {PAL_GC_DBG1, { 0x9c,0x1d,0x79,0x54,0x29,0x22,0x0f,0x53,0x89,0x04,0x56,0x93,0xa0,0x11,0xb8,0xf6, } },
     {PAL_GC, { 0x2c, 0x27, 0xb4, 0xe0, 0x00, 0xe8, 0x5f, 0xd7, 0x8d, 0xbc, 0xa5, 0x51, 0xf1, 0xb1, 0xc9, 0x65 } },
     {PAL_GC_MQ_DBG, {0xf0, 0xb7, 0xf3, 0x53, 0x75, 0xf9, 0xcc, 0x8c, 0xa1, 0xb2, 0xd5, 0x9d, 0x78, 0xe3, 0x54, 0x05 }}
@@ -135,9 +135,9 @@ static void AskToExtractOtr(const bool extractFromRam, const std::string& romPat
             ImGui::SetTooltip("Extracts all files to disk then combines into an archive. If unsure don't use this.");
         }
         if (ImGui::Button("Generate OTR") || sOtrExistsLatch) {
-            sOtrExistsLatch = true;
             FILE* otrFile = fopen("oot.otr", "rb");
             if (otrFile != nullptr) {
+                sOtrExistsLatch = true;
                 fclose(otrFile);
                 ImGui::OpenPopup("OTR file exists");
                 if (ImGui::BeginPopupModal("OTR file exists")) {
@@ -169,7 +169,7 @@ int main(void) {
 #ifdef USE_DX9
     const WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("OTRExporter GUI"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("OTRExporter GUI DX9"), WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("OTRExporter GUI | DX9"), WS_OVERLAPPEDWINDOW, 100, 100, 800, 600, NULL, NULL, wc.hInstance, NULL);
 #elif USE_SDL
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
@@ -247,11 +247,11 @@ int main(void) {
     ImGui_ImplOpenGL2_Init();
 #endif
 
-    const ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    const ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    const ImVec4 greenColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-    const ImVec4 blueColor = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
-    const ImVec4 yellowColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
+    constexpr ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    constexpr ImVec4 redColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    constexpr ImVec4 greenColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
+    constexpr ImVec4 blueColor = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
+    constexpr ImVec4 yellowColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
 
     bool done = false;
     while (!done)
@@ -273,7 +273,6 @@ int main(void) {
         // Start the Dear ImGui frame
         ImGui_ImplDX9_NewFrame();
         ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
 #elif USE_SDL
 SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -287,9 +286,8 @@ SDL_Event event;
          // Start the Dear ImGui frame
         ImGui_ImplOpenGL2_NewFrame();
         ImGui_ImplSDL2_NewFrame();
-        ImGui::NewFrame();
 #endif
-
+        ImGui::NewFrame();
 
         ImGui::Begin("Hello, world!");
 
@@ -300,7 +298,7 @@ SDL_Event event;
         if (ImGui::Button("Open Rom")) {
             ImGuiFileDialog::Instance()->OpenDialog("OpenRomBox", "Open Rom", ".z64,.v64,.n64", ".");
         }
-        if (ImGuiFileDialog::Instance()->Display("OpenRomBox", ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove, ImVec2(WINDOW_WIDTH - 10, WINDOW_HEIGHT / 2), ImVec2(WINDOW_WIDTH - 10, WINDOW_HEIGHT / 2))) {
+        if (ImGuiFileDialog::Instance()->Display("OpenRomBox", 32, ImVec2(WINDOW_WIDTH - 10, WINDOW_HEIGHT / 2), ImVec2(WINDOW_WIDTH - 10, WINDOW_HEIGHT / 2))) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 romPath = ImGuiFileDialog::Instance()->GetFilePathName();
                 romFile = fopen(romPath.c_str(), "rb");
@@ -648,7 +646,7 @@ static void BuildOtr(void) {
 
 //TODO audio files foR MQ
 static void ExtractNewStyle(const std::wstring& romPath) {
-#if 0
+#if _MSC_VER
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
     wchar_t zapdArgs[1024];
