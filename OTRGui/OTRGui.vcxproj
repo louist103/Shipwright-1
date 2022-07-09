@@ -165,7 +165,7 @@
   <ItemGroup>
     <ClCompile Include="src\BaseromUtils\EndianUtils.cpp" />
     <ClCompile Include="src\BaseromUtils\ExtractBaserom.cpp" />
-    <ClCompile Include="src\BaseromUtils\md5.c" />
+    <ClCompile Include="src\BaseromUtils\md5.cpp" />
     <ClCompile Include="src\BaseromUtils\yaz0.cpp" />
     <ClCompile Include="src\ImGui\backends\imgui_impl_dx9.cpp" />
     <ClCompile Include="src\ImGui\backends\imgui_impl_win32.cpp" />

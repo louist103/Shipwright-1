@@ -400,6 +400,7 @@ ZAPDUtils/build/
 ZAPD/BuildInfo.h
 
 DebugObj/*
+<<<<<<< HEAD
 ReleaseObj/*
 .tags
 tags
@@ -412,3 +413,11 @@ ReleaseObj/*
 /OTRGui/out
 /OTRGui/*.otr
 /OTRGui/baserom_917D18F6
+=======
+ReleaseObj/*
+/OTRGui/baserom_871E1C92
+/OTRGui/Extract
+/OTRGui/out
+/OTRGui/*.otr
+/OTRGui/baserom_917D18F6
+>>>>>>> bbf37808ab1d4d35a4e292440ef0fec3eafaed3a

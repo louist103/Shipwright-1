@@ -51,7 +51,7 @@
     <ClCompile Include="src\BaseromUtils\yaz0.cpp">
       <Filter>Source Files\Utils\BaseromUtils</Filter>
     </ClCompile>
-    <ClCompile Include="src\BaseromUtils\md5.c">
+    <ClCompile Include="src\BaseromUtils\md5.cpp">
       <Filter>Source Files\Utils\BaseromUtils</Filter>
     </ClCompile>
     <ClCompile Include="src\ImGui\ImGuiFileDialog.cpp">
