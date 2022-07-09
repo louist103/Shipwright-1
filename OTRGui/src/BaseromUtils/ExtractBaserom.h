@@ -5,7 +5,6 @@
 #include <mutex>
 #include <condition_variable>
 
-
 #define NTSC_10 0xEC7011B7
 #define NTSC_11 0xD43DA81F
 #define NTSC_12 0x693BA2AE
@@ -51,7 +50,7 @@ extern volatile ExtractorState gExtractorState;
 
 int extract(FILE* rom, FILE* fileList);
 int extractRam(const void* rom, FILE* fileList);
-uint32_t getVersion(void* rom, FILE** fileList, bool fromRam);
+uint32_t getVersion(const void* rom, FILE** fileList, bool fromRam);
 //uint32_t getVersionRam(void* rom, FILE** fileList);
 
 

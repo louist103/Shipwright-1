@@ -66,7 +66,7 @@ std::condition_variable cv;
 volatile ExtractorState gExtractorState = ExtractorState::Waiting;
 
 
-uint32_t getVersion(void* rom, FILE** fileList, bool fromRam) {
+uint32_t getVersion(const void* rom, FILE** fileList, bool fromRam) {
     uint32_t romCRC;
 
     if (!fromRam) {
@@ -78,7 +78,7 @@ uint32_t getVersion(void* rom, FILE** fileList, bool fromRam) {
         }
     }
     else {
-        romCRC = reinterpret_cast<uint32_t*>(rom)[0x10 / 4];
+        romCRC = reinterpret_cast<const uint32_t*>(rom)[0x10 / 4];
     }
 
     romCRC = BSWAP32(romCRC);
@@ -213,11 +213,14 @@ int extract(FILE* rom, FILE* fileList) {
 
     rewind(fileList);
 
+    // TODO error handling for a potato that can't malloc this
+    void* data = malloc(1024 * 1024 * 5); //Something larger than any one file
+    void* decompressedData = malloc(1024 * 1024 * 5);
+
     for (uint32_t i = 0; fgets(currentFile, 35, fileList) != nullptr; i++) {
         //auto lock = std::lock_guard<std::mutex>(gMutex);
         char outFileName[55];
         sprintf(outFileName, "baserom_%X/", gRomCrc);
-        void* data;
         bool isCompressed;
 
         fseek(rom, dmaTableOffset + (DMA_ENTRY_SIZE * i), SEEK_SET);
@@ -233,11 +236,9 @@ int extract(FILE* rom, FILE* fileList) {
         dataAddr[physicalEnd] = BSWAP32(dataAddr[physicalEnd]);
 
         if (dataAddr[physicalEnd] == 0) {
-            data = malloc(dataAddr[virtualEnd] - dataAddr[virtualStart]);
             isCompressed = false;
         }
         else {
-            data = malloc(dataAddr[physicalEnd] - dataAddr[physicalStart]);
             isCompressed = true;
         }
 
@@ -277,27 +278,21 @@ int extract(FILE* rom, FILE* fileList) {
             }
         } else {
             size_t size = dataAddr[virtualEnd] - dataAddr[virtualStart];
-            void* decompressedData = malloc(size);
-            if (decompressedData == NULL) {
-                fprintf(stderr, "could not allocate memory for decompressed data\n");
-                exit(1);
-            }
 
             yaz0_decode((const unsigned char*)data, (unsigned char*)decompressedData, size);
             
             if (fwrite(decompressedData, size, 1, outFile) != 1) {
                 fprintf(stderr, "Could not write rom file %s\n", currentFile);
-                free(decompressedData);
                 exit(1);
             }
-            free(decompressedData);
         }
 
         fclose(outFile);
 
-        free(data);
     }
-    //fclose(rom);
+
+    free(decompressedData);
+    free(data);
     gExtractorState = ExtractorState::Done;
     return 0;
 }
@@ -319,11 +314,14 @@ int extractRam(const void* rom, FILE* fileList) {
 
     rewind(fileList);
 
+    // TODO error handling for a potato that can't malloc this
+    void* data = malloc(1024 * 1024 * 5); //Something larger than any one file
+    void* decompressedData = malloc(1024 * 1024 * 5);
+
     for (uint32_t i = 0; fgets(currentFile, 35, fileList) != nullptr; i++) {
         //auto lock = std::lock_guard<std::mutex>(gMutex);
         char outFileName[55];
         sprintf(outFileName, "baserom_%X/", gRomCrc);
-        void* data;
         bool isCompressed;
 
         memcpy(dataAddr, (uint8_t*)((uintptr_t)rom + (dmaTableOffset + (DMA_ENTRY_SIZE * i))), DMA_ENTRY_SIZE);
@@ -334,11 +332,9 @@ int extractRam(const void* rom, FILE* fileList) {
         dataAddr[physicalEnd] = BSWAP32(dataAddr[physicalEnd]);
 
         if (dataAddr[physicalEnd] == 0) {
-            data = malloc(dataAddr[virtualEnd] - dataAddr[virtualStart]);
             isCompressed = false;
         }
         else {
-            data = malloc(dataAddr[physicalEnd] - dataAddr[physicalStart]);
             isCompressed = true;
         }
 
@@ -371,26 +367,21 @@ int extractRam(const void* rom, FILE* fileList) {
         }
         else {
             size_t size = dataAddr[virtualEnd] - dataAddr[virtualStart];
-            void* decompressedData = malloc(size);
-            if (decompressedData == nullptr) {
-                fprintf(stderr, "could not allocate memory for decompressed data\n");
-                exit(1);
-            }
 
             yaz0_decode((const unsigned char*)data, (unsigned char*)decompressedData, size);
 
             if (fwrite(decompressedData, size, 1, outFile) != 1) {
                 fprintf(stderr, "Could not write rom file %s\n", currentFile);
-                free(decompressedData);
                 exit(1);
             }
-            free(decompressedData);
         }
 
         fclose(outFile);
 
-        free(data);
     }
+    free(data);
+    free(decompressedData);
+    
     gExtractorState = ExtractorState::Done;
     return 0;
 }

@@ -32,9 +32,6 @@
 #include <stdint.h>
 
 /* Any 32-bit or wider unsigned integer data type will do */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef unsigned int MD5_u32plus;
 
@@ -52,8 +49,5 @@ extern void MD5_Final(unsigned char* result, MD5_CTX* ctx);
 extern void md5File(FILE* inFile, unsigned char* outBuffer);
 extern void md5Blob(uint8_t* blob, unsigned char* outBuffer, unsigned long romSize);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif
