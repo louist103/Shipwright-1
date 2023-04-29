@@ -80,6 +80,7 @@ public:
 	 * Constructor.
 	 * Child classes should not declare any other constructor besides this one
 	 */
+
 	ZResource(ZFile* nParent);
 	virtual ~ZResource() = default;
 
@@ -121,7 +122,7 @@ public:
 	[[nodiscard]] virtual std::string GetDefaultName(const std::string& prefix) const;
 
 	virtual void GetSourceOutputCode(const std::string& prefix);
-	virtual std::string GetSourceOutputHeader(const std::string& prefix, std::set<std::string> *nameSet);
+	virtual std::string GetSourceOutputHeader([[maybe_unused]] const std::string& prefix, std::set<std::string> *nameSet);
 	virtual void CalcHash();
 	/**
 	 * Exports the resource to binary format

@@ -20,6 +20,11 @@ ZSkeleton::ZSkeleton(ZFile* nParent) : ZResource(nParent)
 	genOTRDef = true;
 }
 
+ZSkeleton::~ZSkeleton() 
+{
+	delete limbsTable;
+}
+
 void ZSkeleton::ParseXML(tinyxml2::XMLElement* reader)
 {
 	ZResource::ParseXML(reader);
@@ -222,6 +227,16 @@ ZLimbTable::ZLimbTable(ZFile* nParent) : ZResource(nParent)
 	RegisterOptionalAttribute("LimbNone");
 	RegisterOptionalAttribute("LimbMax");
 }
+#if 0
+ZLimbTable::ZLimbTable()
+{
+	RegisterRequiredAttribute("LimbType");
+	RegisterRequiredAttribute("Count");
+	RegisterOptionalAttribute("EnumName");
+	RegisterOptionalAttribute("LimbNone");
+	RegisterOptionalAttribute("LimbMax");	
+}
+#endif
 
 void ZLimbTable::ExtractFromBinary(uint32_t nRawDataIndex, ZLimbType nLimbType, size_t nCount)
 {
@@ -378,7 +393,7 @@ std::string ZLimbTable::GetBodySourceCode() const
 	return body;
 }
 
-std::string ZLimbTable::GetSourceOutputHeader([[maybe_unused]] const std::string& prefix)
+std::string ZLimbTable::GetSourceOutputHeader([[maybe_unused]] const std::string& prefix ,std::set<std::string> *nameSet)
 {
 	if (limbNoneName == "" || limbMaxName == "" || enumName == "")
 	{

@@ -29,6 +29,7 @@ public:
 	std::string limbNoneName;
 	std::string limbMaxName;
 
+	ZLimbTable();
 	ZLimbTable(ZFile* nParent);
 
 	void ExtractFromBinary(uint32_t nRawDataIndex, ZLimbType nLimbType, size_t nCount);
@@ -41,18 +42,13 @@ public:
 
 	std::string GetBodySourceCode() const override;
 
-	std::string GetSourceOutputHeader(const std::string& prefix) override;
+	std::string GetSourceOutputHeader([[maybe_unused]] const std::string& prefix, std::set<std::string> *nameSet) override;
+	std::string GetLimbEnumName(uint8_t limbIndex) const;
 
 	std::string GetSourceTypeName() const override;
 	ZResourceType GetResourceType() const override;
 
 	size_t GetRawDataSize() const override;
-
-protected:
-	ZLimbType limbType = ZLimbType::Standard;
-	size_t count = 0;
-
-	std::vector<segptr_t> limbsAddresses;
 };
 
 class ZSkeleton : public ZResource
@@ -67,9 +63,10 @@ public:
 	segptr_t limbsArrayAddress;
 	uint8_t limbCount = 0;
 	uint8_t dListCount = 0;  // FLEX SKELETON ONLY
-	ZLimbTable limbsTable;
+	ZLimbTable* limbsTable = nullptr;
 
 	ZSkeleton(ZFile* nParent);
+	~ZSkeleton();
 
 	void ParseXML(tinyxml2::XMLElement* reader) override;
 	void ParseRawData() override;
@@ -84,7 +81,4 @@ public:
 	DeclarationAlignment GetDeclarationAlignment() const override;
 
 	uint8_t GetLimbCount();
-
-protected:
-	ZLimbTable limbsTable;
 };

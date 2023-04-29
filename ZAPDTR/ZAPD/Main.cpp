@@ -78,14 +78,6 @@ ZRoom room(nullptr);
 #include "tinyxml2.h"
 #include <ctpl_stl.h>
 
-<<<<<<< HEAD
-=======
-//extern const char gBuildHash[];
-const char gBuildHash[] = "";
-
-// LINUX_TODO: remove, those are because of soh <-> lus dependency problems
-
->>>>>>> 61eb97b (Merge branch 'zapd_audio_support' into zelda64)
 bool Parse(const fs::path& xmlFilePath, const fs::path& basePath, const fs::path& outPath,
            ZFileMode fileMode, int workerID);
 
@@ -96,7 +88,6 @@ int ExtractFunc(int workerID, int fileListSize, std::string fileListItem, ZFileM
 
 volatile int numWorkersLeft = 0;
 
-extern const char gBuildHash[];
 
 extern void ImportExporters();
 
@@ -106,7 +97,7 @@ extern "C" int zapd_main(int argc, char* argv[])
 
 	if (argc < 2)
 	{
-		printf("ZAPD.out (%s) [mode (btex/bovl/bsf/bblb/bmdlintr/bamnintr/e)] ...\n", gBuildHash);
+		printf("ZAPD.out [mode (btex/bovl/bsf/bblb/bmdlintr/bamnintr/e)] ...\n");
 		return 1;
 	}
 
@@ -117,7 +108,7 @@ extern "C" int zapd_main(int argc, char* argv[])
 	{
 		if (!strcmp(argv[i], "--version"))
 		{
-			printf("ZAPD.out %s\n", gBuildHash);
+			printf("ZAPD.out\n");
 			return 0;
 		}
 		else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h"))
@@ -279,7 +270,7 @@ extern "C" int zapd_main(int argc, char* argv[])
 	}
 
 	if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_INFO)
-		printf("ZAPD: Zelda Asset Processor For Decomp: %s\n", gBuildHash);
+		printf("ZAPD: Zelda Asset Processor For Decomp\n");
 
 	if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_DEBUG)
 	{
