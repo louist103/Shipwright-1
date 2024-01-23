@@ -24,7 +24,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	message("${CMAKE_VS_PLATFORM_NAME} architecture in use")
 
 	if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"
-		OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32"))
+		OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64"))
 		message(FATAL_ERROR "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
 	endif()
 endif()
@@ -275,7 +275,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	set_target_properties(${PROJECT_NAME} PROPERTIES
 		VS_GLOBAL_KEYWORD "Win32Proj"
 	)
-	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
 		set_target_properties(${PROJECT_NAME} PROPERTIES
 			INTERPROCEDURAL_OPTIMIZATION_RELEASE "TRUE"
 		)
@@ -299,7 +299,7 @@ endif()
 ################################################################################
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 	get_property(MSVC_RUNTIME_LIBRARY_DEFAULT TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY)
-	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
 		string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
 			$<$<CONFIG:Debug>:
 				MultiThreadedDebug
@@ -398,7 +398,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE assets
 )
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
 		target_compile_definitions(${PROJECT_NAME} PRIVATE
 			"$<$<CONFIG:Debug>:"
 				"_DEBUG;"
@@ -467,7 +467,7 @@ endif()
 # Compile and link options
 ################################################################################
 if(MSVC)
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
         target_compile_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
                 /w;
@@ -503,7 +503,7 @@ if(MSVC)
             ${DEFAULT_CXX_EXCEPTION_HANDLING}
         )
     endif()
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
         target_link_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
                 /INCREMENTAL
@@ -680,7 +680,7 @@ endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(glfw3 REQUIRED)
-	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+	if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
 		set(ADDITIONAL_LIBRARY_DEPENDENCIES
 			"libultraship;"
 			"ZAPDUtils;"

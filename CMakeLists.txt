@@ -14,13 +14,21 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-include(CMake/automate-vcpkg.cmake)
+    include(CMake/automate-vcpkg.cmake)
 
-set(VCPKG_TRIPLET x64-windows-static)
-set(VCPKG_TARGET_TRIPLET x64-windows-static)
+    if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
+        set(VCPKG_TRIPLET x86-windows-static)
+        set(VCPKG_TARGET_TRIPLET x86-windows-static)
+    elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+        set(VCPKG_TRIPLET x64-windows-static)
+        set(VCPKG_TARGET_TRIPLET x64-windows-static)
+    elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
+        set(VCPKG_TRIPLET arm64-windows)
+        set(VCPKG_TARGET_TRIPLET arm64-windows)
+    endif()
 
-vcpkg_bootstrap()
-vcpkg_install_packages(zlib bzip2 libpng sdl2 sdl2-net glew glfw3)
+    vcpkg_bootstrap()
+    vcpkg_install_packages(zlib bzip2 libpng sdl2 sdl2-net glew glfw3)
 endif()
 
 ################################################################################
@@ -33,7 +41,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     message("${CMAKE_VS_PLATFORM_NAME} architecture in use")
 
     if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"
-        OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32"))
+        OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32" OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64"))
         message(FATAL_ERROR "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
     endif()
 endif()
