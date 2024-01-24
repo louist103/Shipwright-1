@@ -257,7 +257,7 @@ jobs:
           soh.wuhb
           soh.otr
           readme.txt
-  build-windows:
+  build-windows-x64:
     needs: generate-soh-otr
     runs-on: ${{ (vars.WINDOWS_RUNNER && fromJSON(vars.WINDOWS_RUNNER)) || 'windows-latest' }}
     steps:
@@ -298,6 +298,48 @@ jobs:
         mv ./README.md ./soh-windows/readme.txt
         mv ./build-windows/gamecontrollerdb.txt ./soh-windows/gamecontrollerdb.txt
         mv ./x64/Release/assets ./soh-windows
+
+  build-windows-ARM64:
+    needs: generate-soh-otr
+    runs-on: ${{ (vars.WINDOWS_RUNNER && fromJSON(vars.WINDOWS_RUNNER)) || 'windows-latest' }}
+    steps:
+    - name: Install dependencies
+      if: ${{ !vars.WINDOWS_RUNNER }}
+      run: |
+        choco install ninja
+        Remove-Item -Path "C:\ProgramData\Chocolatey\bin\ccache.exe" -Force -ErrorAction SilentlyContinue
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ runner.os }}-ccache
+    - name: vcpkg
+      uses: johnwason/vcpkg-action@v5
+      with:
+        pkgs: zlib bzip2 libpng sdl2 sdl2-net glew glfw3
+        token: ${{ github.token }}
+        triplet: 'arm64-windows-static'
+    - name: Configure Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+    - name: Build SoH
+      env: 
+        VCPKG_ROOT: ${{github.workspace}}/vcpkg
+      run: |
+        set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
+        cmake -S . -B build-windows -G "Visual Studio 17 2022" -T v143 -A ARM64 -DCMAKE_CXX_FLAGS="/MP" -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DBUILD_REMOTE_CONTROL=1
+        cmake --build build-windows --config Release --parallel 10
+
+        mkdir soh-windows
+        mv ./ARM64/Release/soh.exe ./soh-windows/soh.exe
+        mkdir soh-windows/debug
+        mkdir soh-windows/mods
+        New-Item soh-windows/mods/custom_otr_files_go_here.txt -type file
+        mv ./ARM64/Release/soh.pdb ./soh-windows/debug/soh.pdb
+        mv ./README.md ./soh-windows/readme.txt
+        mv ./build-windows/gamecontrollerdb.txt ./soh-windows/gamecontrollerdb.txt
+        mv ./ARM64/Release/assets ./soh-windows
     - name: Download soh.otr
       uses: actions/download-artifact@v3
       with:
