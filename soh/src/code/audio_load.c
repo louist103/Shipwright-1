@@ -8,6 +8,7 @@
 #include "soh/Enhancements/audio/AudioCollection.h"
 #include "soh/Enhancements/audio/AudioEditor.h"
 #include "soh/ResourceManagerHelpers.h"
+#include <stdio.h>
 
 // Windows deprecated the use of `strdup` it uses _strdup. Linux/Unix doesn't have _strdup.
 #ifdef _MSC_VER
