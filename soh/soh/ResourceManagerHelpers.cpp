@@ -426,7 +426,7 @@ extern "C" SoundFontSample* ResourceMgr_LoadAudioSample(const char* path) {
     return (SoundFontSample*) ResourceGetDataByName(path);
 }
 
-extern "C" SoundFont* ResourceMgr_LoadAudioSoundFont(const char* path) {
+extern "C" SoundFont* ResourceMgr_LoadAudioSoundFontByName(const char* path) {
     return (SoundFont*) ResourceGetDataByName(path);
 }
 

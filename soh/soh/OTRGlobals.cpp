@@ -1479,66 +1479,6 @@ extern "C" uint8_t GetSeedIconIndex(uint8_t index) {
     return OTRGlobals::Instance->gRandoContext->hashIconIndexes[index];
 }
 
-std::map<std::string, SoundFontSample*> cachedCustomSFs;
-
-extern "C" SoundFontSample* ReadCustomSample(const char* path) {
-    return nullptr;
-/*
-    if (!ExtensionCache.contains(path))
-        return nullptr;
-
-    ExtensionEntry entry = ExtensionCache[path];
-
-    auto sampleRaw = Ship::Context::GetInstance()->GetResourceManager()->LoadFile(entry.path);
-    uint32_t* strem = (uint32_t*)sampleRaw->Buffer.get();
-    uint8_t* strem2 = (uint8_t*)strem;
-
-    SoundFontSample* sampleC = new SoundFontSample;
-
-    if (entry.ext == "wav") {
-        drwav_uint32 channels;
-        drwav_uint32 sampleRate;
-        drwav_uint64 totalPcm;
-        drmp3_int16* pcmData =
-            drwav_open_memory_and_read_pcm_frames_s16(strem2, sampleRaw->BufferSize, &channels, &sampleRate, &totalPcm, NULL);
-        sampleC->size = totalPcm;
-        sampleC->sampleAddr = (uint8_t*)pcmData;
-        sampleC->codec = CODEC_S16;
-
-        sampleC->loop = new AdpcmLoop;
-        sampleC->loop->start = 0;
-        sampleC->loop->end = sampleC->size - 1;
-        sampleC->loop->count = 0;
-        sampleC->sampleRateMagicValue = 'RIFF';
-        sampleC->sampleRate = sampleRate;
-
-        cachedCustomSFs[path] = sampleC;
-        return sampleC;
-    } else if (entry.ext == "mp3") {
-        drmp3_config mp3Info;
-        drmp3_uint64 totalPcm;
-        drmp3_int16* pcmData =
-            drmp3_open_memory_and_read_pcm_frames_s16(strem2, sampleRaw->BufferSize, &mp3Info, &totalPcm, NULL);
-
-        sampleC->size = totalPcm * mp3Info.channels * sizeof(short);
-        sampleC->sampleAddr = (uint8_t*)pcmData;
-        sampleC->codec = CODEC_S16;
-
-        sampleC->loop = new AdpcmLoop;
-        sampleC->loop->start = 0;
-        sampleC->loop->end = sampleC->size;
-        sampleC->loop->count = 0;
-        sampleC->sampleRateMagicValue = 'RIFF';
-        sampleC->sampleRate = mp3Info.sampleRate;
-
-        cachedCustomSFs[path] = sampleC;
-        return sampleC;
-    }
-
-    return nullptr;
-*/
-}
-
 std::filesystem::path GetSaveFile(std::shared_ptr<Ship::Config> Conf) {
     const std::string fileName = Conf->GetString("Game.SaveName", Ship::Context::GetPathRelativeToAppDirectory("oot_save.sav"));
     std::filesystem::path saveFile = std::filesystem::absolute(fileName);

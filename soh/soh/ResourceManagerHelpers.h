@@ -50,7 +50,7 @@ extern "C" {
     char* ResourceMgr_LoadArrayByNameAsVec3s(const char* path);
     Vtx* ResourceMgr_LoadVtxByCRC(uint64_t crc);
     Vtx* ResourceMgr_LoadVtxByName(char* path);
-    SoundFont* ResourceMgr_LoadAudioSoundFont(const char* path);
+    SoundFont* ResourceMgr_LoadAudioSoundFontByName(const char* path);
     SequenceData ResourceMgr_LoadSeqByName(const char* path);
     SoundFontSample* ResourceMgr_LoadAudioSample(const char* path);
     CollisionHeader* ResourceMgr_LoadColByName(const char* path);
