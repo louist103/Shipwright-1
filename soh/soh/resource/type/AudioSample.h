@@ -1,24 +1,23 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include "Resource.h"
 #include <libultraship/libultra/types.h>
 
 namespace SOH {
 typedef struct {
-    /* 0x00 */ uintptr_t start;
-    /* 0x04 */ uintptr_t end;
+    /* 0x00 */ u32 start;
+    /* 0x04 */ u32 end;
     /* 0x08 */ u32 count;
     /* 0x0C */ char unk_0C[0x4];
     /* 0x10 */ s16 state[16]; // only exists if count != 0. 8-byte aligned
-} AdpcmLoop; // size = 0x30 (or 0x10)
+} AdpcmLoop;                  // size = 0x30 (or 0x10)
 
 typedef struct {
     /* 0x00 */ s32 order;
     /* 0x04 */ s32 npredictors;
     /* 0x08 */ s16* book; // size 8 * order * npredictors. 8-byte aligned
-} AdpcmBook; // s
+} AdpcmBook;              // s
 
 typedef struct {
     union {
@@ -42,19 +41,14 @@ class AudioSample : public Ship::Resource<Sample> {
 
     AudioSample() : Resource(std::shared_ptr<Ship::ResourceInitData>()) {
     }
+    ~AudioSample();
 
     Sample* GetPointer();
     size_t GetPointerSize();
 
     Sample sample;
-    std::vector<uint8_t> audioSampleData;
-
     AdpcmLoop loop;
-    uint32_t loopStateCount;
-
     AdpcmBook book;
-    uint32_t bookDataCount;
-    std::vector<int16_t> bookData;
     // Only applies to streamed audio
     float tuning = -1.0f;
 };
