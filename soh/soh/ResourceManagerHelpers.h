@@ -52,6 +52,7 @@ extern "C" {
     Vtx* ResourceMgr_LoadVtxByName(char* path);
     SoundFont* ResourceMgr_LoadAudioSoundFontByName(const char* path);
     SequenceData ResourceMgr_LoadSeqByName(const char* path);
+    SequenceData* ResourceMgr_LoadSeqPtrByName(const char* path);
     SoundFontSample* ResourceMgr_LoadAudioSample(const char* path);
     CollisionHeader* ResourceMgr_LoadColByName(const char* path);
     bool ResourceMgr_IsAltAssetsEnabled();

@@ -422,6 +422,11 @@ extern "C" SequenceData ResourceMgr_LoadSeqByName(const char* path) {
     return *sequence;
 }
 
+extern "C" SequenceData* ResourceMgr_LoadSeqPtrByName(const char* path) {
+    SequenceData* sequence = (SequenceData*)ResourceGetDataByName(path);
+    return sequence;
+}
+
 extern "C" SoundFontSample* ResourceMgr_LoadAudioSample(const char* path) {
     return (SoundFontSample*) ResourceGetDataByName(path);
 }
