@@ -382,8 +382,11 @@ OTRGlobals::OTRGlobals() {
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryTextV0>(), RESOURCE_FORMAT_BINARY, "Text", static_cast<uint32_t>(SOH::ResourceType::SOH_Text), 0);
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryXMLTextV0>(), RESOURCE_FORMAT_XML, "Text", static_cast<uint32_t>(SOH::ResourceType::SOH_Text), 0);
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSampleV2>(), RESOURCE_FORMAT_BINARY, "AudioSample", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSample), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryXMLAudioSampleV0>(), RESOURCE_FORMAT_XML, "Sample", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSample), 0);
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSoundFontV2>(), RESOURCE_FORMAT_BINARY, "AudioSoundFont", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSoundFont), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryXMLSoundFontV0>(), RESOURCE_FORMAT_XML, "SoundFont", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSoundFont), 0);
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryAudioSequenceV2>(), RESOURCE_FORMAT_BINARY, "AudioSequence", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSequence), 2);
+    loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryXMLAudioSequenceV0>(), RESOURCE_FORMAT_XML, "Sequence", static_cast<uint32_t>(SOH::ResourceType::SOH_AudioSequence), 0);
     loader->RegisterResourceFactory(std::make_shared<SOH::ResourceFactoryBinaryBackgroundV0>(), RESOURCE_FORMAT_BINARY, "Background", static_cast<uint32_t>(SOH::ResourceType::SOH_Background), 0);
 
     gSaveStateMgr = std::make_shared<SaveStateMgr>();
@@ -1830,6 +1833,10 @@ extern "C" int AudioPlayer_GetDesiredBuffered(void) {
 
 extern "C" void AudioPlayer_Play(const uint8_t* buf, uint32_t len) {
     AudioPlayerPlayFrame(buf, len);
+}
+
+extern "C" void Messagebox_ShowErrorBox(char* title, char* body) {
+    Extractor::ShowErrorBox(title, body);
 }
 
 extern "C" int Controller_ShouldRumble(size_t slot) {
