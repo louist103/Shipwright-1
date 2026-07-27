@@ -53,7 +53,7 @@ static std::vector<std::string> CollectRoms(const std::vector<std::string>& args
 }
 
 int main(int argc, char** argv) {
-    std::string src, dest, version;
+    std::string src, dest, version, singlePath;
     std::vector<std::string> romArgs;
 
     for (int i = 1; i < argc; i++) {
@@ -72,11 +72,16 @@ int main(int argc, char** argv) {
             dest = next("--dest");
         } else if (arg == "--version") {
             version = next("--version");
-        } else if (!arg.empty() && arg[0] == '-') {
+        }
+        else if (arg == "--single") {
+            singlePath = next("--single");
+        }
+        else if (!arg.empty() && arg[0] == '-') {
             fprintf(stderr, "unknown option: %s\n", arg.c_str());
             Usage(argv[0]);
             return 1;
-        } else {
+        }
+        else {
             romArgs.push_back(arg);
         }
     }
@@ -98,7 +103,7 @@ int main(int argc, char** argv) {
 
     for (const auto& rom : roms) {
         // A fresh extraction per ROM; torch names the archive from config.yml.
-        const std::string archive = SohTorch::Extract(rom, src, dest, version, nullptr);
+        const std::string archive = SohTorch::Extract(rom, src, dest, version, nullptr, singlePath);
         if (archive.empty()) {
             fprintf(stderr, "failed to extract %s\n", rom.c_str());
             return 1;

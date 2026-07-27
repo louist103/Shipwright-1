@@ -17,7 +17,7 @@ size_t CountAssetFiles(const std::string& ymlDir);
 // is returned rather than assumed. Empty if extraction threw or produced no archive.
 // Increments progress once per asset file.
 std::string Extract(const std::string& romPath, const std::string& srcDir, const std::string& destDir,
-                    const std::string& portVersion, std::atomic<size_t>* progress);
+                    const std::string& portVersion, std::atomic<size_t>* progress, const std::string& path);
 
 } // namespace SohTorch
 

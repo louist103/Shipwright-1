@@ -32,7 +32,7 @@ size_t CountAssetFiles(const std::string& ymlDir) {
 }
 
 std::string Extract(const std::string& romPath, const std::string& srcDir, const std::string& destDir,
-                    const std::string& portVersion, std::atomic<size_t>* progress) {
+                    const std::string& portVersion, std::atomic<size_t>* progress, const std::string& singlePath) {
     std::string archiveName;
 
     try {
@@ -47,6 +47,9 @@ std::string Extract(const std::string& romPath, const std::string& srcDir, const
         });
 
         // Init is the whole run; it calls Process() internally.
+        if (!singlePath.empty()) {
+            companion->SetSingleAssetPath(singlePath);
+        }
         companion->Init(ExportType::Binary);
 
         // config.yml names the archive per rom; ask rather than guess, and ask before the
