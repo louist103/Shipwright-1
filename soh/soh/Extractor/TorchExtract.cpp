@@ -48,7 +48,7 @@ std::string Extract(const std::string& romPath, const std::string& srcDir, const
 
         // Init is the whole run; it calls Process() internally.
         if (!singlePath.empty()) {
-            companion->SetSingleAssetPath(singlePath);
+            companion->SetSingleYMLPath(singlePath);
         }
         companion->Init(ExportType::Binary);
 
