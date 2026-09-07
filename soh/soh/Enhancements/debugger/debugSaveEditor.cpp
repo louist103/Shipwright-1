@@ -1,39 +1,34 @@
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <map>
+#include <string>
+
+#include <fast/Fast3dGui.h>
+
 #include "debugSaveEditor.h"
-#include "soh/Enhancements/randomizer/randomizerTypes.h"
 #include "soh/Enhancements/randomizer/randomizer.h"
 #include "soh/Enhancements/randomizer/static_data.h"
 #include "soh/Enhancements/randomizer/item.h"
 #include "soh/Enhancements/randomizer/dungeon.h"
-#include "soh/Enhancements/randomizer/randomizerEnums/RandomizerGet.h"
-#include "soh/Enhancements/randomizer/randomizerEnums/RandomizerInf.h"
+#include "soh/Enhancements/randomizer/randomizerEnumStrings.h"
 #include "soh/util.h"
 #include "soh/SohGui/ImGuiUtils.h"
 #include "soh/OTRGlobals.h"
 #include "soh/SohGui/UIWidgets.hpp"
 #include "soh/SohGui/SohGui.hpp"
 #include "soh/SaveManager.h"
-#include "soh/ResourceManagerHelpers.h"
-
-#include <spdlog/common.h>
-#include <spdlog/fmt/fmt.h>
-#include <algorithm>
-#include <array>
-#include <bit>
-#include <map>
-#include <string>
-#include <soh_assets.h>
-
-#include <fast/Fast3dGui.h>
 
 extern "C" {
+#include <soh_assets.h>
 #include <z64.h>
 #include "variables.h"
 #include "functions.h"
 #include "macros.h"
+#include "message_data_static.h"
 extern PlayState* gPlayState;
 }
 
-#include "message_data_static.h"
 extern "C" MessageTableEntry* sGerMessageEntryTablePtr;
 extern "C" MessageTableEntry* sFraMessageEntryTablePtr;
 extern "C" MessageTableEntry* sJpnMessageEntryTablePtr;
@@ -1372,13 +1367,24 @@ void DrawFlagArrayWithTooltips(const std::string& name, T& flags, Colors color, 
     ImGui::PopID();
 }
 
+static const char* GetFlagDescription(const FlagTable& flagTable, uint16_t index) {
+    if (flagTable.flagTableType == RANDOMIZER_INF) {
+        std::string_view name = EnumToString(static_cast<RandomizerInf>(index));
+        return name.empty() ? "" : name.data();
+    }
+    auto it = flagTable.flagDescriptions.find(index);
+    return it != flagTable.flagDescriptions.end() ? it->second : "";
+}
+
 // Draw a flag bitfield as a grid of checkboxes
 void DrawFlagTableArray16(const FlagTable& flagTable, uint16_t row, uint16_t& flags) {
     ImGui::PushID((std::to_string(row) + flagTable.name).c_str());
     for (int32_t flagIndex = 15; flagIndex >= 0; flagIndex--) {
         ImGui::SameLine();
         ImGui::PushID(flagIndex);
-        bool hasDescription = !!flagTable.flagDescriptions.contains(row * 16 + flagIndex);
+        uint16_t index = static_cast<uint16_t>(row * 16 + flagIndex);
+        const char* desc = GetFlagDescription(flagTable, index);
+        bool hasDescription = desc[0] != '\0';
         uint32_t bitMask = 1 << flagIndex;
         ImVec4 themeColor = ColorValues.at(THEME_COLOR);
         ImVec4 colorDark = { themeColor.x * 0.4f, themeColor.y * 0.4f, themeColor.z * 0.4f, themeColor.z };
@@ -1400,9 +1406,7 @@ void DrawFlagTableArray16(const FlagTable& flagTable, uint16_t row, uint16_t& fl
         PopStyleCheckbox();
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            uint16_t index = row * 16 + flagIndex;
             if (hasDescription) {
-                const char* desc = flagTable.flagDescriptions.at(index);
                 ImGui::Text("0x%02X: %s", index, UIWidgets::WrappedText(desc, 60).c_str());
             } else {
                 ImGui::Text("0x%02X: %s (Bit %d)", index, flagTable.name, flagIndex);
@@ -1474,8 +1478,7 @@ static void DrawFlagTableSearchResults(const FlagTable& flagTable, ImGuiTextFilt
 
         for (int32_t flagIndex = 15; flagIndex >= 0; flagIndex--) {
             uint16_t index = static_cast<uint16_t>(row * 16 + flagIndex);
-            auto descIt = flagTable.flagDescriptions.find(index);
-            const char* desc = descIt != flagTable.flagDescriptions.end() ? descIt->second : "";
+            const char* desc = GetFlagDescription(flagTable, index);
             std::string searchable = spdlog::fmt_lib::format("0x{:02X} {}", index, desc);
             if (!filter.PassFilter(searchable.c_str())) {
                 continue;
@@ -1484,7 +1487,7 @@ static void DrawFlagTableSearchResults(const FlagTable& flagTable, ImGuiTextFilt
             hasMatches = true;
 
             ImGui::PushID(index);
-            bool hasDescription = descIt != flagTable.flagDescriptions.end();
+            bool hasDescription = desc[0] != '\0';
             uint32_t bitMask = 1 << flagIndex;
             ImVec4 themeColor = ColorValues.at(THEME_COLOR);
             ImVec4 colorDark = { themeColor.x * 0.4f, themeColor.y * 0.4f, themeColor.z * 0.4f, themeColor.z };
