@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
     GameConsole_Init();
     InitOTR(argc, argv);
     // TODO: Was moved to below InitOTR because it requires window to be setup. But will be late to catch crashes.
-    CrashHandlerRegisterCallback(CrashHandler_PrintSohData);
+    //CrashHandlerRegisterCallback(CrashHandler_PrintSohData);
     BootCommands_Init();
 
     Heaps_Alloc();

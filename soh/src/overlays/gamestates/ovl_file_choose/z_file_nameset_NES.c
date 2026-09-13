@@ -238,7 +238,7 @@ void FileChoose_SetNameEntryVtxNES(GameState* thisx) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, this->nameEntryBoxAlpha);
 
     for (var_s0 = 0, var_v0 = 0; var_s0 < 0x20; var_s0 += 4, var_v0++) {
-        FileChoose_DrawCharacterNES(this->state.gfxCtx, font->fontBuf + filename[var_v0] * FONT_CHAR_TEX_SIZE, var_s0);
+        FileChoose_DrawCharacterNES(this->state.gfxCtx, font->fontBuf /*+ filename[var_v0] * FONT_CHAR_TEX_SIZE*/, var_s0);
     }
 
     this->nameEntryVtx[37].v.tc[0] = this->nameEntryVtx[38].v.tc[1] = this->nameEntryVtx[39].v.tc[0] =

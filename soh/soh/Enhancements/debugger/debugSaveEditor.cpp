@@ -164,6 +164,18 @@ static bool DungeonHasBossKey(int32_t dungeonIndex) {
     }
 }
 
+static bool DrawButtonWithAtlas(Fast::Fast3dGui* gui, const ItemMapEntry& entry) {
+    const auto tex = std::static_pointer_cast<Fast::Texture>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(entry.texturePath));
+    ImVec2 ul = {(float)tex->atlasX, (float)tex->atlasY};
+    ImVec2 lr = {(float)(tex->atlasX + tex->Width), (float)(tex->atlasY + tex->Height)};
+    ul.x /= tex->mParentAtlas->Width;
+    ul.y /= tex->mParentAtlas->Height;
+    lr.x /= tex->mParentAtlas->Width;
+    lr.y /= tex->mParentAtlas->Height;
+    return ImGui::ImageButton(entry.name.c_str(), gui->GetTextureByName(entry.name),
+                                              ImVec2(IMAGE_SIZE, IMAGE_SIZE), ul, lr);
+}
+
 // Helper to draw a button item selector box (exact same pattern as inventory picker)
 // buttonIndex: index into buttonItems array (0=B, 1=C-Left, 2=C-Down, 3=C-Right, 4-7=D-pad)
 // isBButton: true for B button (allows swords only), false for C/D-pad (button-usable items)
@@ -223,8 +235,7 @@ static void DrawButtonItemSelector(const char* label, int buttonIndex, UIWidgets
         const ItemMapEntry& slotEntry = mappedItem->second;
         // Use label-based ID to avoid conflicts when same item is on multiple buttons
         std::string itemId = std::string("item_btn_") + label + "_" + slotEntry.name;
-        if (ImGui::ImageButton(itemId.c_str(), gui->GetTextureByName(slotEntry.name), ImVec2(IMAGE_SIZE, IMAGE_SIZE),
-                               ImVec2(0, 0), ImVec2(1, 1))) {
+        if (DrawButtonWithAtlas(gui.get(), slotEntry)) {
             ImGui::OpenPopup(label);
         }
     } else {
@@ -290,8 +301,8 @@ static void DrawButtonItemSelector(const char* label, int buttonIndex, UIWidgets
             const ItemMapEntry& slotEntry = possibleItems[pickerIndex];
             PushStyleButton(Colors::DarkGray);
             std::string pickerItemId = std::string("item_picker_") + label + "_" + slotEntry.name;
-            auto ret = ImGui::ImageButton(pickerItemId.c_str(), gui->GetTextureByName(slotEntry.name),
-                                          ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+            auto ret = DrawButtonWithAtlas(gui.get(), slotEntry);//ImGui::ImageButton(pickerItemId.c_str(), gui->GetTextureByName(slotEntry.name),
+                                          //ImVec2(IMAGE_SIZE, IMAGE_SIZE), ul, lr);
             PopStyleButton();
             if (ret) {
                 *buttonItem = slotEntry.id;
@@ -1049,8 +1060,7 @@ void DrawInventoryTab() {
             } else if (const auto mappedItem = itemMapping.find(item);
                        item != ITEM_NONE && mappedItem != itemMapping.end()) {
                 const ItemMapEntry& slotEntry = mappedItem->second;
-                wasClicked = ImGui::ImageButton(slotEntry.name.c_str(), gui->GetTextureByName(slotEntry.name),
-                                                ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+                wasClicked = DrawButtonWithAtlas(gui.get(), slotEntry);
             } else {
                 wasClicked =
                     ImGui::Button("##itemNone", ImVec2(IMAGE_SIZE, IMAGE_SIZE) + ImGui::GetStyle().FramePadding * 2);
@@ -1147,8 +1157,7 @@ void DrawInventoryTab() {
                     }
                     const ItemMapEntry& slotEntry = possibleItems[pickerIndex];
                     PushStyleButton(Colors::DarkGray);
-                    auto ret = ImGui::ImageButton(slotEntry.name.c_str(), gui->GetTextureByName(slotEntry.name),
-                                                  ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+                    auto ret = DrawButtonWithAtlas(gui.get(), slotEntry);
                     PopStyleButton();
                     if (ret) {
                         gSaveContext.inventory.items[selectedIndex] = slotEntry.id;
@@ -1877,6 +1886,7 @@ void DrawUpgrade(const std::string& categoryName, int32_t categoryId, const std:
 // Draws a combo that lets you choose and upgrade value from a popup grid of icons
 void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const std::vector<uint8_t>& items) {
     auto gui = std::dynamic_pointer_cast<Fast::Fast3dGui>(Ship::Context::GetRawInstance()->GetWindow()->GetGui());
+    auto guiRaw = gui.get();
     static const char* upgradePopupPicker = "upgradePopupPicker";
 
     ImGui::PushID(categoryName.c_str());
@@ -1885,9 +1895,14 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
     auto value = (size_t)CUR_UPG_VALUE(categoryId);
     uint8_t item = value < items.size() ? items[value] : (uint8_t)ITEM_NONE;
     const ItemMapEntry& slotEntry = itemMapping[item];
+    const auto tex = std::static_pointer_cast<Fast::Texture>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(slotEntry.texturePath));
+    ImVec2 ul = {(float)tex->atlasX, (float)tex->atlasY};
+    ImVec2 lr = {(float)(tex->atlasX + tex->Width), (float)(tex->atlasY + tex->Height)};
+    ul /= tex->mParentAtlas->Width;
+    lr /= tex->mParentAtlas->Height;
     if (ImGui::ImageButton(slotEntry.name.c_str(),
                            gui->GetTextureByName(item != ITEM_NONE ? slotEntry.name : itemMapping[items[1]].nameFaded),
-                           ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1))) {
+                           ImVec2(IMAGE_SIZE, IMAGE_SIZE), ul, lr)) {
         ImGui::OpenPopup(upgradePopupPicker);
     }
     PopStyleButton();
@@ -1909,8 +1924,7 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
                 Tooltip("None");
             } else {
                 const ItemMapEntry& slotEntry = itemMapping[items[pickerIndex]];
-                auto ret = ImGui::ImageButton(slotEntry.name.c_str(), gui->GetTextureByName(slotEntry.name),
-                                              ImVec2(IMAGE_SIZE, IMAGE_SIZE), ImVec2(0, 0), ImVec2(1, 1));
+                const auto ret = DrawButtonWithAtlas(guiRaw, slotEntry);
                 if (ret) {
                     Inventory_ChangeUpgrade(categoryId, static_cast<s16>(pickerIndex));
                     ImGui::CloseCurrentPopup();

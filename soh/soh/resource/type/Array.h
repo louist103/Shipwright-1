@@ -2,6 +2,8 @@
 
 #include <ship/resource/Resource.h>
 
+#include "fast/lus_gbi.h"
+
 namespace Fast {
 union F3DVtx;
 }

@@ -8,8 +8,6 @@
     - [ 11, 0x01AA1000 ]
     - [ 12, 0x01AA1000 ]
     - [ 13, 0x01AA1000 ]
-  external_files:
-    - pal_mq_dbg/objects/gameplay_keep.yml
 
 gNintendo64LogoDL:
   type: GFX

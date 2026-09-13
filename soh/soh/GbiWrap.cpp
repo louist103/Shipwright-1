@@ -109,6 +109,9 @@ extern "C" void gSPDisplayListOffset(Gfx* pkt, Gfx* dl, int offset) {
 
 extern "C" void gSPVertex(Gfx* pkt, uintptr_t v, int n, int v0) {
 
+    if (v == 0x3000fe9 ) {
+        int bp = 0;
+    }
     if (ResourceMgr_OTRSigCheck((char*)v) == 1)
         v = (uintptr_t)ResourceMgr_LoadVtxByName((char*)v);
 

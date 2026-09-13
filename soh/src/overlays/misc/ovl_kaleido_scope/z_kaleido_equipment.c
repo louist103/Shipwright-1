@@ -785,7 +785,7 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                     gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                     gSPGrayscale(POLY_OPA_DISP++, true);
                 }
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0);
+                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
                 gSPGrayscale(POLY_OPA_DISP++, false);
             }
         } else {
@@ -799,7 +799,7 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                 }
                 KaleidoScope_DrawQuadTextureRGBA32(
                     play->state.gfxCtx, gItemIcons[sChildUpgradeItemBases[i] + CUR_UPG_VALUE(sChildUpgrades[i]) - 1],
-                    32, 32, 0);
+                    32, 32, 0, __FILE__, __LINE__);
                 gSPGrayscale(POLY_OPA_DISP++, false);
             } else if (CUR_UPG_VALUE(sAdultUpgrades[i]) != 0) {
                 int upgradeItem = sAdultUpgradeItemBases[i] + CUR_UPG_VALUE(sAdultUpgrades[i]) - 1;
@@ -813,7 +813,7 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                     gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                     gSPGrayscale(POLY_OPA_DISP++, true);
                 }
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0);
+                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
                 gSPGrayscale(POLY_OPA_DISP++, false);
             }
         }
@@ -827,11 +827,11 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                 gSPGrayscale(POLY_OPA_DISP++, true);
             }
             if (((u32)i == 0) && (k == 2) && (gSaveContext.bgsFlag != 0)) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconSwordBiggoronTex, 32, 32, point);
+                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconSwordBiggoronTex, 32, 32, point, __FILE__, __LINE__);
             } else if ((i == 0) && (k == 2) && (gBitFlags[bit + 1] & gSaveContext.inventory.equipment)) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconBrokenGiantsKnifeTex, 32, 32, point);
+                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconBrokenGiantsKnifeTex, 32, 32, point, __FILE__, __LINE__);
             } else if (gBitFlags[bit] & gSaveContext.inventory.equipment) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, point);
+                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, point, __FILE__, __LINE__);
             }
             gSPGrayscale(POLY_OPA_DISP++, false);
         }

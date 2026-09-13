@@ -355,6 +355,26 @@ extern "C" char* ResourceMgr_LoadTexOrDListByName(const char* filePath) {
     return (char*)ResourceMgr_GetResourceDataByNameHandlingMQ(filePath);
 }
 
+extern "C" bool ResourceMgr_GetTextureAtlasInfoByName(const char* filePath, int* atlasX, int* atlasY, int* width, int* height, int* atlasWidth, int* atlasHeight) {
+    auto res = std::static_pointer_cast<Fast::Texture>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(filePath));
+    if (res->mParentAtlas == nullptr)
+        return false;
+
+    if (atlasX != nullptr)
+        *atlasX = res->atlasX;
+    if (atlasY != nullptr)
+        *atlasY = res->atlasY;
+    if (width != nullptr)
+        *width = res->Width;
+    if (height != nullptr)
+        *height = res->Height;
+    if (atlasWidth != nullptr)
+        *atlasWidth = res->mParentAtlas->Width;
+    if (atlasHeight != nullptr)
+        *atlasHeight = res->mParentAtlas->Height;
+    return true;
+}
+
 extern "C" char* ResourceMgr_LoadIfDListByName(const char* filePath) {
     auto res = ResourceMgr_GetResourceByNameHandlingMQ(filePath);
 

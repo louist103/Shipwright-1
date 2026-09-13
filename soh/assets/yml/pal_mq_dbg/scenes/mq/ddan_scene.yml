@@ -1,6 +1,9 @@
 :config:
   segments:
     - [ 2, 0x0203A000 ]
+    - [ 3, 0x02050000 ]
+  external_files:
+    - pal_mq_dbg/scenes/mq/ddan_room_0.yml
 
 ddan_scene:
   type: OOT:SCENE

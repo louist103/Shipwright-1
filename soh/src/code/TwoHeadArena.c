@@ -82,6 +82,7 @@ void* THA_AllocStart(TwoHeadArena* tha, size_t size) {
     void* start = tha->head;
 
     tha->head = (uintptr_t)tha->head + size;
+    memset(tha->head, 0, size);
     return start;
 }
 
@@ -103,6 +104,8 @@ void* THA_AllocEnd(TwoHeadArena* tha, size_t size) {
     }
 
     tha->tail = (((uintptr_t)tha->tail & mask) - size) & mask;
+    // TODO remove this
+    memset(tha->tail, 0, size);
     return tha->tail;
 }
 
@@ -110,11 +113,13 @@ void* THA_AllocEndAlign16(TwoHeadArena* tha, size_t size) {
     size_t mask = ~0xF;
 
     tha->tail = (((uintptr_t)tha->tail & mask) - size) & mask;
+    memset(tha->tail, 0, size);
     return tha->tail;
 }
 
 void* THA_AllocEndAlign(TwoHeadArena* tha, size_t size, size_t mask) {
     tha->tail = (((uintptr_t)tha->tail & mask) - size) & mask;
+    memset(tha->tail, 0, size);
     return tha->tail;
 }
 

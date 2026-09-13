@@ -26,7 +26,7 @@ static s16 D_80812544[] = {
 void FileChoose_DrawCharacter(GraphicsContext* gfxCtx, void* texture, s16 vtx) {
     OPEN_DISPS(gfxCtx);
 
-    gDPLoadTextureBlock_4b(POLY_OPA_DISP++, texture, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_CLAMP,
+    gDPLoadTextureBlock_4b(POLY_OPA_DISP++, texture, G_IM_FMT_I, 192, 192, 0, G_TX_NOMIRROR | G_TX_CLAMP,
                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
     gSP1Quadrangle(POLY_OPA_DISP++, vtx, vtx + 2, vtx + 3, vtx + 1, 0);
 
@@ -38,48 +38,48 @@ void FileChoose_SetKeyboardVtx(GameState* thisx) {
     s16 val;
     s16 phi_t2;
     s16 phi_t0;
-    s16 phi_t3;
+    s16 vtxIdx;
     s16 phi_s1;
-    s16 phi_t1;
-    s16 phi_s2;
+    s16 c; // columns
+    s16 r; // rows
 
     this->keyboardVtx = Graph_Alloc(this->state.gfxCtx, sizeof(Vtx) * 4 * 5 * 13);
 
     phi_s1 = 0x26;
 
-    for (phi_t2 = 0, phi_s2 = 0, phi_t3 = 0; phi_s2 < 5; phi_s2++) {
+    for (phi_t2 = 0, r = 0, vtxIdx = 0; r < 5; r++) {
         phi_t0 = -0x60;
 
-        for (phi_t1 = 0; phi_t1 < 13; phi_t1++, phi_t3 += 4, phi_t2++) {
-            this->keyboardVtx[phi_t3].v.ob[0] = this->keyboardVtx[phi_t3 + 2].v.ob[0] = D_80812544[phi_t2] + phi_t0;
+        for (c = 0; c < 13; c++, vtxIdx += 4, phi_t2++) {
+            this->keyboardVtx[vtxIdx].v.ob[0] = this->keyboardVtx[vtxIdx + 2].v.ob[0] = D_80812544[phi_t2] + phi_t0;
 
-            this->keyboardVtx[phi_t3 + 1].v.ob[0] = this->keyboardVtx[phi_t3 + 3].v.ob[0] =
+            this->keyboardVtx[vtxIdx + 1].v.ob[0] = this->keyboardVtx[vtxIdx + 3].v.ob[0] =
                 D_80812544[phi_t2] + phi_t0 + 12;
 
-            this->keyboardVtx[phi_t3].v.ob[1] = this->keyboardVtx[phi_t3 + 1].v.ob[1] = phi_s1;
+            this->keyboardVtx[vtxIdx].v.ob[1] = this->keyboardVtx[vtxIdx + 1].v.ob[1] = phi_s1;
 
-            this->keyboardVtx[phi_t3 + 2].v.ob[1] = this->keyboardVtx[phi_t3 + 3].v.ob[1] = phi_s1 - 12;
+            this->keyboardVtx[vtxIdx + 2].v.ob[1] = this->keyboardVtx[vtxIdx + 3].v.ob[1] = phi_s1 - 12;
 
-            this->keyboardVtx[phi_t3].v.ob[2] = this->keyboardVtx[phi_t3 + 1].v.ob[2] =
-                this->keyboardVtx[phi_t3 + 2].v.ob[2] = this->keyboardVtx[phi_t3 + 3].v.ob[2] = 0;
+            this->keyboardVtx[vtxIdx].v.ob[2] = this->keyboardVtx[vtxIdx + 1].v.ob[2] =
+                this->keyboardVtx[vtxIdx + 2].v.ob[2] = this->keyboardVtx[vtxIdx + 3].v.ob[2] = 0;
 
-            this->keyboardVtx[phi_t3].v.flag = this->keyboardVtx[phi_t3 + 1].v.flag =
-                this->keyboardVtx[phi_t3 + 2].v.flag = this->keyboardVtx[phi_t3 + 3].v.flag = 0;
+            this->keyboardVtx[vtxIdx].v.flag = this->keyboardVtx[vtxIdx + 1].v.flag =
+                this->keyboardVtx[vtxIdx + 2].v.flag = this->keyboardVtx[vtxIdx + 3].v.flag = 0;
 
-            this->keyboardVtx[phi_t3].v.tc[0] = this->keyboardVtx[phi_t3].v.tc[1] =
-                this->keyboardVtx[phi_t3 + 1].v.tc[1] = this->keyboardVtx[phi_t3 + 2].v.tc[0] = 0;
+            this->keyboardVtx[vtxIdx].v.tc[0] = this->keyboardVtx[vtxIdx].v.tc[1] =
+                this->keyboardVtx[vtxIdx + 1].v.tc[1] = this->keyboardVtx[vtxIdx + 2].v.tc[0] = 0;
 
-            this->keyboardVtx[phi_t3 + 1].v.tc[0] = this->keyboardVtx[phi_t3 + 2].v.tc[1] =
-                this->keyboardVtx[phi_t3 + 3].v.tc[0] = this->keyboardVtx[phi_t3 + 3].v.tc[1] = 0x200;
+            this->keyboardVtx[vtxIdx + 1].v.tc[0] = this->keyboardVtx[vtxIdx + 2].v.tc[1] =
+                this->keyboardVtx[vtxIdx + 3].v.tc[0] = this->keyboardVtx[vtxIdx + 3].v.tc[1] = 0x200;
 
-            this->keyboardVtx[phi_t3].v.cn[0] = this->keyboardVtx[phi_t3 + 1].v.cn[0] =
-                this->keyboardVtx[phi_t3 + 2].v.cn[0] = this->keyboardVtx[phi_t3 + 3].v.cn[0] =
-                    this->keyboardVtx[phi_t3].v.cn[1] = this->keyboardVtx[phi_t3 + 1].v.cn[1] =
-                        this->keyboardVtx[phi_t3 + 2].v.cn[1] = this->keyboardVtx[phi_t3 + 3].v.cn[1] =
-                            this->keyboardVtx[phi_t3].v.cn[2] = this->keyboardVtx[phi_t3 + 1].v.cn[2] =
-                                this->keyboardVtx[phi_t3 + 2].v.cn[2] = this->keyboardVtx[phi_t3 + 3].v.cn[2] =
-                                    this->keyboardVtx[phi_t3].v.cn[3] = this->keyboardVtx[phi_t3 + 1].v.cn[3] =
-                                        this->keyboardVtx[phi_t3 + 2].v.cn[3] = this->keyboardVtx[phi_t3 + 3].v.cn[3] =
+            this->keyboardVtx[vtxIdx].v.cn[0] = this->keyboardVtx[vtxIdx + 1].v.cn[0] =
+                this->keyboardVtx[vtxIdx + 2].v.cn[0] = this->keyboardVtx[vtxIdx + 3].v.cn[0] =
+                    this->keyboardVtx[vtxIdx].v.cn[1] = this->keyboardVtx[vtxIdx + 1].v.cn[1] =
+                        this->keyboardVtx[vtxIdx + 2].v.cn[1] = this->keyboardVtx[vtxIdx + 3].v.cn[1] =
+                            this->keyboardVtx[vtxIdx].v.cn[2] = this->keyboardVtx[vtxIdx + 1].v.cn[2] =
+                                this->keyboardVtx[vtxIdx + 2].v.cn[2] = this->keyboardVtx[vtxIdx + 3].v.cn[2] =
+                                    this->keyboardVtx[vtxIdx].v.cn[3] = this->keyboardVtx[vtxIdx + 1].v.cn[3] =
+                                        this->keyboardVtx[vtxIdx + 2].v.cn[3] = this->keyboardVtx[vtxIdx + 3].v.cn[3] =
                                             255;
 
             phi_t0 += 0x10;
@@ -216,7 +216,7 @@ void FileChoose_SetNameEntryVtx(GameState* thisx) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, this->nameEntryBoxAlpha);
 
     for (phi_v0 = 0, phi_s0 = 0; phi_s0 < 0x20; phi_s0 += 4, phi_v0++) {
-        FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf + filename[phi_v0] * FONT_CHAR_TEX_SIZE, phi_s0);
+        FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf /*+ filename[phi_v0] * FONT_CHAR_TEX_SIZE*/, phi_s0);
     }
 
     this->nameEntryVtx[0x25].v.tc[0] = this->nameEntryVtx[0x26].v.tc[1] = this->nameEntryVtx[0x27].v.tc[0] =
@@ -252,14 +252,14 @@ void FileChoose_DrawKeyboard(GameState* thisx) {
         gSPVertex(POLY_OPA_DISP++, &this->keyboardVtx[vtx], 32, 0);
 
         for (tmp = 0; tmp < 32; i++, tmp += 4) {
-            FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf + D_808123F0[i] * FONT_CHAR_TEX_SIZE, tmp);
+            FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf/* + D_808123F0[i] * FONT_CHAR_TEX_SIZE*/, tmp);
         }
 
         vtx += 32;
     }
 
     gSPVertex(POLY_OPA_DISP++, &this->keyboardVtx[0x100], 4, 0);
-    FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf + D_808123F0[i] * FONT_CHAR_TEX_SIZE, 0);
+    FileChoose_DrawCharacter(this->state.gfxCtx, font->fontBuf/* + D_808123F0[i] * FONT_CHAR_TEX_SIZE*/, 0);
 
     CLOSE_DISPS(this->state.gfxCtx);
 }

@@ -6,6 +6,7 @@
 #include "soh/Enhancements/randomizer/randomizerTypes.h"
 #include "soh/Enhancements/cosmetics/cosmeticsTypes.h"
 #include "soh/OTRGlobals.h"
+#include "soh/ResourceManagerHelpers.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
@@ -244,7 +245,7 @@ void KaleidoScope_DrawItemCycleExtras(PlayState* play, u8 slot, u8 canCycle, u8 
                 gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                 gSPGrayscale(POLY_OPA_DISP++, true);
             }
-            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[leftItem], 32, 32, 0);
+            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[leftItem], 32, 32, 0, __FILE__, __LINE__);
             gSPGrayscale(POLY_OPA_DISP++, false);
         }
         if (showRightItem) {
@@ -252,7 +253,7 @@ void KaleidoScope_DrawItemCycleExtras(PlayState* play, u8 slot, u8 canCycle, u8 
                 gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                 gSPGrayscale(POLY_OPA_DISP++, true);
             }
-            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[rightItem], 32, 32, 4);
+            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[rightItem], 32, 32, 4, __FILE__, __LINE__);
             gSPGrayscale(POLY_OPA_DISP++, false);
         }
 
@@ -731,28 +732,39 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, pauseCtx->alpha);
 
         if (gSaveContext.inventory.items[i] != ITEM_NONE) {
+            int itemId = gSaveContext.inventory.items[i];
+                int atlasX, atlasY, sizX, sizY, atlasW, atlasH;
+                bool atlasRes = ResourceMgr_GetTextureAtlasInfoByName(gItemIcons[itemId], &atlasX, &atlasY, &sizX, &sizY, &atlasW, &atlasH);
             if ((pauseCtx->unk_1E4 == 0) && (pauseCtx->pageIndex == PAUSE_ITEM) && (pauseCtx->cursorSpecialPos == 0)) {
+                // gSP1Quadrangle(POLY_OPA_DISP++, point, point + 2, point + 3, point + 1, 0);
                 if (CHECK_AGE_REQ_SLOT(i)) {
                     if ((sEquipState == 2) && (i == 3)) {
                         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, magicArrowEffectsR[pauseCtx->equipTargetItem - 0xBF],
                                         magicArrowEffectsG[pauseCtx->equipTargetItem - 0xBF],
                                         magicArrowEffectsB[pauseCtx->equipTargetItem - 0xBF], pauseCtx->alpha);
-
-                        pauseCtx->itemVtx[j + 0].v.ob[0] = pauseCtx->itemVtx[j + 2].v.ob[0] =
-                            pauseCtx->itemVtx[j + 0].v.ob[0] - 2;
-
-                        pauseCtx->itemVtx[j + 1].v.ob[0] = pauseCtx->itemVtx[j + 3].v.ob[0] =
-                            pauseCtx->itemVtx[j + 0].v.ob[0] + 32;
-
-                        pauseCtx->itemVtx[j + 0].v.ob[1] = pauseCtx->itemVtx[j + 1].v.ob[1] =
-                            pauseCtx->itemVtx[j + 0].v.ob[1] + 2;
-
-                        pauseCtx->itemVtx[j + 2].v.ob[1] = pauseCtx->itemVtx[j + 3].v.ob[1] =
-                            pauseCtx->itemVtx[j + 0].v.ob[1] - 32;
+#if 0
+                        for (int k = 0; k < 4; k++) {
+                            pauseCtx->itemVtx[j + k].n.aSiz[0] = sizX;
+                            pauseCtx->itemVtx[j + k].n.aSiz[1] = sizY;
+                            pauseCtx->itemVtx[j + k].n.aTc[0] = atlasX;
+                            pauseCtx->itemVtx[j + k].n.aTc[1] = atlasY;
+                        }
+#endif
+                        pauseCtx->itemVtx[j + 0].v.ob[0] = pauseCtx->itemVtx[j + 2].v.ob[0] = pauseCtx->itemVtx[j + 0].v.ob[0] - 2;
+                        pauseCtx->itemVtx[j + 1].v.ob[0] = pauseCtx->itemVtx[j + 3].v.ob[0] = pauseCtx->itemVtx[j + 0].v.ob[0] + 32;
+                        pauseCtx->itemVtx[j + 0].v.ob[1] = pauseCtx->itemVtx[j + 1].v.ob[1] = pauseCtx->itemVtx[j + 0].v.ob[1] + 2;
+                        pauseCtx->itemVtx[j + 2].v.ob[1] = pauseCtx->itemVtx[j + 3].v.ob[1] = pauseCtx->itemVtx[j + 0].v.ob[1] - 32;
                     } else if (i == cursorSlot) {
+#if 0
+                        for (int k = 0; k < 4; k++) {
+                            pauseCtx->itemVtx[j + k].n.aSiz[0] = sizX;
+                            pauseCtx->itemVtx[j + k].n.aSiz[1] = sizY;
+                            pauseCtx->itemVtx[j + k].n.aTc[0] = atlasX;
+                            pauseCtx->itemVtx[j + k].n.aTc[1] = atlasY;
+                        }
+#endif
                         pauseCtx->itemVtx[j + 0].v.ob[0] = pauseCtx->itemVtx[j + 2].v.ob[0] =
                             pauseCtx->itemVtx[j + 0].v.ob[0] - 2;
-
                         pauseCtx->itemVtx[j + 1].v.ob[0] = pauseCtx->itemVtx[j + 3].v.ob[0] =
                             pauseCtx->itemVtx[j + 0].v.ob[0] + 32;
 
@@ -766,13 +778,13 @@ void KaleidoScope_DrawItemSelect(PlayState* play) {
             }
 
             gSPVertex(POLY_OPA_DISP++, &pauseCtx->itemVtx[j + 0], 4, 0);
-            int itemId = gSaveContext.inventory.items[i];
+
             bool not_acquired = !CHECK_AGE_REQ_ITEM(itemId);
             if (not_acquired) {
                 gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                 gSPGrayscale(POLY_OPA_DISP++, true);
             }
-            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, 0);
+            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], atlasW,  atlasH, 0, __FILE__, __LINE__);
             gSPGrayscale(POLY_OPA_DISP++, false);
         }
     }

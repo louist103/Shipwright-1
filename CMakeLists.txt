@@ -190,7 +190,7 @@ set(INCLUDE_MPQ_SUPPORT ON)
 ################################################################################
 # Set CONTROLLERBUTTONS_T
 ################################################################################
-add_compile_definitions(CONTROLLERBUTTONS_T=uint32_t)
+add_compile_definitions(CONTROLLERBUTTONS_T=uint32_t USE_GBI_TRACE=1 USE_ATLASES=1)
 
 ################################################################################
 # Torch (ROM asset extraction)
@@ -367,7 +367,7 @@ endif()
 ################################################################################
 add_subdirectory(libultraship ${CMAKE_BINARY_DIR}/libultraship SYSTEM)
 quiet_target(libultraship "${WARNING_OVERRIDE}")
-target_compile_definitions(libultraship PUBLIC INCLUDE_MPQ_SUPPORT)
+target_compile_definitions(libultraship PUBLIC INCLUDE_MPQ_SUPPORT USE_GBI_TRACE=1 USE_ATLASES=1)
 add_subdirectory(soh)
 
 set_property(TARGET soh PROPERTY APPIMAGE_DESKTOP_FILE_TERMINAL YES)

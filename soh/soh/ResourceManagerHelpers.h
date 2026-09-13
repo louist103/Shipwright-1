@@ -45,6 +45,7 @@ char* ResourceMgr_LoadJPEG(char* data, size_t dataSize);
 uint16_t ResourceMgr_LoadTexWidthByName(char* texPath);
 uint16_t ResourceMgr_LoadTexHeightByName(char* texPath);
 char* ResourceMgr_LoadTexOrDListByName(const char* filePath);
+bool ResourceMgr_GetTextureAtlasInfoByName(const char* filePath, int* atlasX, int* atlasY, int* width, int* height, int* atlasWidth, int* atlasHeight);
 char* ResourceMgr_LoadPlayerAnimByName(const char* animPath);
 AnimationHeaderCommon* ResourceMgr_LoadAnimByName(const char* path);
 char* ResourceMgr_GetNameByCRC(uint64_t crc, char* alloc);
