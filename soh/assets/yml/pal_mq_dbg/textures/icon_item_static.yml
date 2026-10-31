@@ -10,6 +10,7 @@
     - [ 13, 0x0074C000 ]
   external_files:
     - pal_mq_dbg/objects/gameplay_keep.yml
+  create_atlas: true
 
 gABtnSymbolTex:
   type: TEXTURE

@@ -355,6 +355,7 @@ extern "C" char* ResourceMgr_LoadTexOrDListByName(const char* filePath) {
     return (char*)ResourceMgr_GetResourceDataByNameHandlingMQ(filePath);
 }
 
+// Returns the positions of a texture within an atlas if it is in one. Returns `false` if not in an atlas. All returned values are undefined if false is returned
 extern "C" bool ResourceMgr_GetTextureAtlasInfoByName(const char* filePath, int* atlasX, int* atlasY, int* width, int* height, int* atlasWidth, int* atlasHeight) {
     auto res = std::static_pointer_cast<Fast::Texture>(Ship::Context::GetRawInstance()->GetResourceManager()->LoadResourceProcess(filePath));
     if (res->mParentAtlas == nullptr)

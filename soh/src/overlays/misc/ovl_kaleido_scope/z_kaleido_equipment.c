@@ -1,4 +1,5 @@
 #include "z_kaleido_scope.h"
+#include "soh/ResourceManagerHelpers.h"
 #include "textures/icon_item_static/icon_item_static.h"
 #include "textures/parameter_static/parameter_static.h"
 #include "soh/Enhancements/cosmetics/cosmeticsTypes.h"
@@ -772,6 +773,10 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 255, 255, 255, pauseCtx->alpha);
 
     for (rowStart = 0, j = 0, temp = 0, i = 0; i < 4; i++, rowStart += 4, j += 16) {
+        int tex = 0;
+        char* textures[4] = {0};
+        int points[4];
+        bool drawGray[4] = {0};
         gSPVertex(POLY_OPA_DISP++, &pauseCtx->equipVtx[j], 16, 0);
         if (LINK_AGE_IN_YEARS == YEARS_CHILD) {
             point = CUR_UPG_VALUE(sChildUpgrades[i]);
@@ -782,11 +787,11 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                 if (!CHECK_AGE_REQ_ITEM(upgradeItem) ||
                     (CVarGetInteger(CVAR_ENHANCEMENT("ToggleStrength"), 0) &&
                      CVarGetInteger(CVAR_ENHANCEMENT("StrengthDisabled"), 0) && sChildUpgrades[i] == UPG_STRENGTH)) {
-                    gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
-                    gSPGrayscale(POLY_OPA_DISP++, true);
+                    drawGray[tex] = true;
                 }
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
-                gSPGrayscale(POLY_OPA_DISP++, false);
+                textures[tex] = gItemIcons[upgradeItem];
+                points[tex] = 0;
+                //KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
             }
         } else {
             if ((i == 0) &&
@@ -794,13 +799,13 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                  0)) { // If the player doesn't have the bow, load the current slingshot ammo upgrade instead.
                 // Check the base item, the upgrade level can be 0 here
                 if (!CHECK_AGE_REQ_ITEM(sChildUpgradeItemBases[i])) {
-                    gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255); // Grey Out Slingshot Bullet Bags
-                    gSPGrayscale(POLY_OPA_DISP++, true);
+                    drawGray[i] = true;
                 }
-                KaleidoScope_DrawQuadTextureRGBA32(
-                    play->state.gfxCtx, gItemIcons[sChildUpgradeItemBases[i] + CUR_UPG_VALUE(sChildUpgrades[i]) - 1],
-                    32, 32, 0, __FILE__, __LINE__);
-                gSPGrayscale(POLY_OPA_DISP++, false);
+                //KaleidoScope_DrawQuadTextureRGBA32(
+                //    play->state.gfxCtx, gItemIcons[sChildUpgradeItemBases[i] + CUR_UPG_VALUE(sChildUpgrades[i]) - 1],
+                //    32, 32, 0, __FILE__, __LINE__);
+                textures[tex] = gItemIcons[sChildUpgradeItemBases[i] + CUR_UPG_VALUE(sChildUpgrades[i]) - 1];
+                points[tex] = 0;
             } else if (CUR_UPG_VALUE(sAdultUpgrades[i]) != 0) {
                 int upgradeItem = sAdultUpgradeItemBases[i] + CUR_UPG_VALUE(sAdultUpgrades[i]) - 1;
                 // Grey Out upgrades the wrong age, ie the Goron Bracelet as Adult,
@@ -810,29 +815,56 @@ void KaleidoScope_DrawEquipment(PlayState* play) {
                      !CVarGetInteger(CVAR_ENHANCEMENT("ToggleStrength"), 0)) ||
                     (CVarGetInteger(CVAR_ENHANCEMENT("ToggleStrength"), 0) &&
                      CVarGetInteger(CVAR_ENHANCEMENT("StrengthDisabled"), 0) && sAdultUpgrades[i] == UPG_STRENGTH)) {
-                    gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
-                    gSPGrayscale(POLY_OPA_DISP++, true);
+                    drawGray[tex] = true;
                 }
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
-                gSPGrayscale(POLY_OPA_DISP++, false);
+                textures[tex] = gItemIcons[upgradeItem];
+                points[tex] = 0;
+                //KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[upgradeItem], 32, 32, 0, __FILE__, __LINE__);
             }
         }
+        tex++;
         // Draw inventory screen icons
         for (k = 0, bit = rowStart, point = 4; k < 3; k++, point += 4, temp++, bit++) {
-
+            void* texture;
             int itemId = ITEM_SWORD_KOKIRI + temp;
             bool age_restricted = !CHECK_AGE_REQ_ITEM(itemId);
             if (age_restricted) {
+                drawGray[tex] = true;
+            }
+            if (((u32)i == 0) && (k == 2) && (gSaveContext.bgsFlag != 0)) {
+                texture = gItemIconSwordBiggoronTex;
+                //KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconSwordBiggoronTex, 32, 32, point, __FILE__, __LINE__);
+            } else if ((i == 0) && (k == 2) && (gBitFlags[bit + 1] & gSaveContext.inventory.equipment)) {
+                texture = gItemIconBrokenGiantsKnifeTex;
+                //KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconBrokenGiantsKnifeTex, 32, 32, point, __FILE__, __LINE__);
+            } else if (gBitFlags[bit] & gSaveContext.inventory.equipment) {
+                texture = gItemIcons[itemId];
+                //KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, point, __FILE__, __LINE__);
+            }
+            textures[tex] = texture;
+            points[tex] = point;
+            gSPGrayscale(POLY_OPA_DISP++, false);
+            tex++;
+        }
+        for (k = 0; k < 4; k++) {
+#if USE_ATLASES
+            int atlasX, atlasY, sizX, sizY, atlasTX, atlasTY;
+            bool atlasRes = ResourceMgr_GetTextureAtlasInfoByName(textures[k], &atlasX, &atlasY, &sizX, &sizY, &atlasTX, &atlasTY);
+
+            for (int l = 0; l < 4; l++) {
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aSiz[0] = sizX;
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aSiz[1] = sizY;
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aTc[0] = atlasX;
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aTc[1] = atlasY;
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aTSiz[0] = atlasTX;
+                pauseCtx->equipVtx[j + (k * 4 + l)].n.aTSiz[1] = atlasTY;
+            }
+            if (drawGray[k]) {
                 gDPSetGrayscaleColor(POLY_OPA_DISP++, 109, 109, 109, 255);
                 gSPGrayscale(POLY_OPA_DISP++, true);
             }
-            if (((u32)i == 0) && (k == 2) && (gSaveContext.bgsFlag != 0)) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconSwordBiggoronTex, 32, 32, point, __FILE__, __LINE__);
-            } else if ((i == 0) && (k == 2) && (gBitFlags[bit + 1] & gSaveContext.inventory.equipment)) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIconBrokenGiantsKnifeTex, 32, 32, point, __FILE__, __LINE__);
-            } else if (gBitFlags[bit] & gSaveContext.inventory.equipment) {
-                KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, gItemIcons[itemId], 32, 32, point, __FILE__, __LINE__);
-            }
+#endif
+            KaleidoScope_DrawQuadTextureRGBA32(play->state.gfxCtx, textures[k], atlasTX, atlasTY, points[k], __FILE__, __LINE__);
             gSPGrayscale(POLY_OPA_DISP++, false);
         }
     }

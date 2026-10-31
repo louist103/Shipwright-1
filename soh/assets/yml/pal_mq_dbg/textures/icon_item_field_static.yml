@@ -1,7 +1,7 @@
 :config:
   segments:
     - [ 12, 0x007E2000 ]
-
+  create_atlas: true
 gWorldMapAreaBox1Tex:
   type: TEXTURE
   offset: 0x6E40

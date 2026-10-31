@@ -575,7 +575,19 @@ void KaleidoScope_DrawWorldMap(PlayState* play, GraphicsContext* gfxCtx) {
 
     if (HREG(15) == 0) {
         gDPSetTextureFilter(POLY_OPA_DISP++, G_TF_POINT);
+        gDPLoadTLUT_pal256(POLY_OPA_DISP++, gWorldMapImageTLUT);
+        gDPSetTextureLUT(POLY_OPA_DISP++, G_TT_RGBA16);
+        gSPVertex(POLY_OPA_DISP++, &pauseCtx->mapPageVtx[188], 4, 0);
 
+        gDPLoadMultiTile(POLY_OPA_DISP++, gWorldMapImageTex, 0, G_TX_RENDERTILE, G_IM_FMT_CI, G_IM_SIZ_8b, 216, 128, 0,
+                         0, 216 - 1, 128- 1, 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_WRAP | G_TX_NOMIRROR,
+                         G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        gDPSetTileSize(POLY_OPA_DISP++, G_TX_RENDERTILE, 0, 0, (216 - 1) << G_TEXTURE_IMAGE_FRAC,
+                       (128 - 1) << G_TEXTURE_IMAGE_FRAC);
+        gSP1Quadrangle(POLY_OPA_DISP++, 0, 0 + 2, 0 + 3, 0 + 1, 0);
+
+        gDPSetTextureFilter(POLY_OPA_DISP++, G_TF_POINT);
+#if 0
         gDPLoadTLUT_pal256(POLY_OPA_DISP++, gWorldMapImageTLUT);
         gDPSetTextureLUT(POLY_OPA_DISP++, G_TT_RGBA16);
 
@@ -611,6 +623,7 @@ void KaleidoScope_DrawWorldMap(PlayState* play, GraphicsContext* gfxCtx) {
                        (2 - 1) << G_TEXTURE_IMAGE_FRAC);
 
         gSP1Quadrangle(POLY_OPA_DISP++, j, j + 2, j + 3, j + 1, 0);
+#endif
     } else if (HREG(15) == 1) {
         Gfx* gfx = POLY_OPA_DISP;
 
@@ -645,8 +658,8 @@ void KaleidoScope_DrawWorldMap(PlayState* play, GraphicsContext* gfxCtx) {
 
             for (j = i = 0; i < 8; i++, j += 4) {
                 if (!(gSaveContext.worldMapAreaData & gBitFlags[cloudFlagNums[k + i]])) {
-                    gDPLoadTextureBlock_4b(POLY_OPA_DISP++, cloudTexs[k + i], G_IM_FMT_I, D_8082AAEC[k + i],
-                                           D_8082AB2C[k + i], 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_WRAP | G_TX_NOMIRROR,
+                    gDPLoadTextureBlock_4b(POLY_OPA_DISP++, cloudTexs[k + i], G_IM_FMT_I, gVtxPageMapWorldQuadsWidth[k + i],
+                                           gVtxPageMapWorldQuadsHeight[k + i], 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_WRAP | G_TX_NOMIRROR,
                                            G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
                     gSP1Quadrangle(POLY_OPA_DISP++, j, j + 2, j + 3, j + 1, 0);

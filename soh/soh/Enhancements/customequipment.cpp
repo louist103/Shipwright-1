@@ -517,6 +517,7 @@ static void RegisterCustomEquipment() {
                     }
                 }
                 Gfx* resolvedCustom = LoadCustomGfx(customDL);
+                // TODO if this fails to load don't try it every frame/limb
                 if (resolvedCustom) {
                     Gfx* resolvedHand =
                         LoadGfxByName(isAdult ? gLinkAdultLeftHandClosedNearDL : gLinkChildLeftFistNearDL);

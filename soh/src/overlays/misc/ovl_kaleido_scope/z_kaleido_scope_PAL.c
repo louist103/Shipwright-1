@@ -220,7 +220,7 @@ static void* sEquipmentTexs[] = {
     sEquipmentJPNTexs,
 };
 
-static void* sSelectItemTexs[] = {
+static char** sSelectItemTexs[] = {
     sSelectItemENGTexs,
     sSelectItemGERTexs,
     sSelectItemFRATexs,
@@ -246,6 +246,15 @@ static void* sSaveTexs[] = {
     sSaveGERTexs,
     sSaveFRATexs,
     sSaveJPNTexs,
+};
+
+static char*** pageTextures[] = {
+    sSelectItemTexs,
+    sEquipmentTexs,
+    sMapTexs,
+    sQuestStatusTexs,
+    sMapTexs,
+    sSaveTexs,
 };
 
 static void* iconNameTextures[] = {
@@ -895,11 +904,11 @@ static void* mapNameTextures[] = {
     /* 21 */ gGanonsCastlePositionNameJPNTex,
 };
 
-s16 D_8082AAEC[] = {
+s16 gVtxPageMapWorldQuadsWidth[] = {
     32, 112, 32, 48, 32, 32, 32, 48, 32, 64, 32, 48, 48, 48, 48, 64, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 80, 64,
 };
 
-s16 D_8082AB2C[] = {
+s16 gVtxPageMapWorldQuadsHeight[] = {
     24, 72, 13, 22, 19, 20, 19, 27, 14, 26, 22, 21, 49, 32, 45, 60, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 16, 32, 8,
 };
 
@@ -1147,6 +1156,32 @@ void KaleidoScope_ProcessPlayerPreRender(void) {
     PreRender_Destroy(&sPlayerPreRender);
 }
 
+#define gDPSetImageDimensionsOTR(pkt, width, height, isAtlas, f, line) \
+_DW({ \
+Gfx* _g = (Gfx*)(pkt); \
+_g->words.w0 = _SHIFTL(G_SETTING_OTR_DIM, 24, 8); \
+_g->words.w0 |= isAtlas;\
+_g->words.w1 = (width << 16) | height;\
+_g->words.trace.file = f;\
+_g->words.trace.traceLine = line;\
+_g->words.trace.valid = true;\
+});
+
+#define gDPLoadTextureBlockAtlas(pkt, timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt, file, line)          \
+_DW({\
+gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                                                      \
+gDPSetImageDimensionsOTR(pkt, width, height, true, file, line);                                                                  \
+gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts);       \
+gDPLoadSync(pkt);                                                                                             \
+gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                \
+CALC_DXT(width, siz##_BYTES));                                                                   \
+gDPPipeSync(pkt);                                                                                             \
+gDPSetTile(pkt, fmt, siz, (((width)*siz##_LINE_BYTES) + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, \
+cms, masks, shifts);                                                                               \
+gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                               \
+((height)-1) << G_TEXTURE_IMAGE_FRAC);                                                         \
+})
+
 Gfx* KaleidoScope_QuadTextureIA4(Gfx* gfx, void* texture, s16 width, s16 height, u16 point) {
     gDPLoadTextureBlock_4b(gfx++, texture, G_IM_FMT_IA, width, height, 0, G_TX_NOMIRROR | G_TX_WRAP,
                            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
@@ -1205,38 +1240,14 @@ void KaleidoScope_MoveCursorToSpecialPos(PlayState* play, u16 specialPos) {
                          &gSfxDefaultReverb);
 }
 
-#define gDPSetImageDimensionsOTR(pkt, width, height, isAtlas, file, line) \
-    _DW({ \
-        Gfx* _g = (Gfx*)(pkt); \
-        _g->words.w0 = _SHIFTL(G_SETTING_OTR_DIM, 24, 8); \
-        _g->words.w0 |= isAtlas;\
-        _g->words.w1 = (width << 16) | height;\
-        _g->words.trace.file = file;\
-        _g->words.trace.traceLine = line;\
-        _g->words.trace.valid = true;\
-    });
 
-#define gDPLoadTextureBlockAtlas(pkt, timg, fmt, siz, width, height, pal, cms, cmt, masks, maskt, shifts, shiftt, aX, aY, file, line)          \
-_DW({\
-gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                                                      \
-gDPSetImageDimensionsOTR(pkt, aX, aY, true, file, line);                                                                  \
-gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts);       \
-gDPLoadSync(pkt);                                                                                             \
-gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                \
-CALC_DXT(width, siz##_BYTES));                                                                   \
-gDPPipeSync(pkt);                                                                                             \
-gDPSetTile(pkt, fmt, siz, (((width)*siz##_LINE_BYTES) + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, shiftt, \
-cms, masks, shifts);                                                                               \
-gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC,                               \
-((height)-1) << G_TEXTURE_IMAGE_FRAC);                                                         \
-})
 
 void KaleidoScope_DrawQuadTextureRGBA32(GraphicsContext* gfxCtx, void* texture, u16 width, u16 height, u16 point, char* file, int line) {
     OPEN_DISPS(gfxCtx);
 
     gDPLoadTextureBlockAtlas(POLY_OPA_DISP++, texture, G_IM_FMT_RGBA, G_IM_SIZ_32b, width, height, 0,
                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
-                        G_TX_NOLOD, width, height, file, line);
+                        G_TX_NOLOD, file, line);
     gSP1Quadrangle(POLY_OPA_DISP++, point, point + 2, point + 3, point + 1, 0);
 
     CLOSE_DISPS(gfxCtx);
@@ -1421,11 +1432,15 @@ Gfx* KaleidoScope_DrawPageSections(Gfx* gfx, Vtx* vertices, void** textures) {
     i = 0;
     j = 0;
     while (j < 32) {
-        gDPPipeSync(gfx++);
-        gDPLoadTextureBlock(gfx++, textures[i], G_IM_FMT_IA, G_IM_SIZ_8b, 80, 32, 0, G_TX_NOMIRROR | G_TX_WRAP,
+        //gDPPipeSync(gfx++);
+        if (vertices[i * 4].n.aTSiz[0] == -1)
+            gDPLoadTextureBlock(gfx++, textures[i], G_IM_FMT_IA, G_IM_SIZ_8b, 80, 32, 0, G_TX_NOMIRROR | G_TX_WRAP,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        else
+            gDPLoadTextureBlockAtlas(gfx++, textures[i], G_IM_FMT_RGBA, G_IM_SIZ_32b, vertices[i * 4].n.aTSiz[0], vertices[i * 4].n.aTSiz[1], 0,
+                            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                            G_TX_NOLOD, __FILE__, __LINE__);
         gSP1Quadrangle(gfx++, j, j + 2, j + 3, j + 1, 0);
-
         j += 4;
         i++;
     }
@@ -1434,9 +1449,14 @@ Gfx* KaleidoScope_DrawPageSections(Gfx* gfx, Vtx* vertices, void** textures) {
 
     j = 0;
     while (j < 28) {
-        gDPPipeSync(gfx++);
-        gDPLoadTextureBlock(gfx++, textures[i], G_IM_FMT_IA, G_IM_SIZ_8b, 80, 32, 0, G_TX_NOMIRROR | G_TX_WRAP,
+        //gDPPipeSync(gfx++);
+        if (vertices[i * 4].n.aTSiz[0] == -1)
+            gDPLoadTextureBlock(gfx++, textures[i], G_IM_FMT_IA, G_IM_SIZ_8b, 80, 32, 0, G_TX_NOMIRROR | G_TX_WRAP,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        else
+            gDPLoadTextureBlockAtlas(gfx++, textures[i], G_IM_FMT_RGBA, G_IM_SIZ_32b, vertices[i * 4].n.aTSiz[0], vertices[i * 4].n.aTSiz[1], 0,
+                            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                            G_TX_NOLOD, __FILE__, __LINE__);
         gSP1Quadrangle(gfx++, j, j + 2, j + 3, j + 1, 0);
 
         j += 4;
@@ -2609,127 +2629,203 @@ static u8 sPageVtxColorB[][4] = {
     { 50, 70, 70, 50 },   { 30, 60, 60, 30 }, { 50, 110, 110, 50 },
 };
 
-static s16 D_8082AE90[] = {
+static s16 sVtxPageItemQuadsX[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AE94[] = {
+static s16 sVtxPageEquipQuadsX[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AE98[] = {
+static s16 sVtxPageMapDungeonQuadsX[] = {
     0xFFDC, 0x000C, 0xFFEE, 0x0046, 0x0046, 0x0046, 0xFFA8, 0xFFA8, 0xFFA8,
     0xFFA8, 0xFFA8, 0xFFA8, 0xFFA8, 0xFFA8, 0xFF96, 0xFFC2, 0xFFD8, 0x0000,
 };
-static s16 D_8082AEBC[] = {
+static s16 sVtxPageQuestQuadsX[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AEC0[] = {
+static s16 sVtxPageMapWorldQuadsX[] = {
     0x002F, 0xFFCF, 0xFFEF, 0xFFF1, 0xFFF7, 0x0018, 0x002B, 0x000E, 0x0009, 0x0026, 0x0052,
     0x0047, 0xFFB4, 0xFFA9, 0xFF94, 0xFFCA, 0xFFA3, 0xFFBD, 0xFFC8, 0xFFDF, 0xFFF6, 0x0001,
     0x000E, 0x0018, 0x0023, 0x003A, 0x004A, 0x0059, 0x0000, 0xFFC6, 0x0013, 0x001C,
 };
-static s16 D_8082AF00[] = {
+static s16 sVtxPagePromptQuadsX[] = {
     0xFFB4, 0xFFC6, 0x000A, 0xFFC6, 0x000A, 0x0000,
 };
-static s16 D_8082AF0C[] = {
+static s16 sVtxPageItemQuadsWidth[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF10[] = {
+static s16 sVtxPageEquipQuadsWidth[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF14[] = {
+static s16 sVtxPageMapDungeonQuadsWidth[] = {
     0x0030, 0x0030, 0x0060, 0x0018, 0x0018, 0x0018, 0x0018, 0x0018, 0x0018,
     0x0018, 0x0018, 0x0018, 0x0018, 0x0018, 0x0010, 0x0010, 0x0018, 0x0000,
 };
-static s16 D_8082AF38[] = {
+static s16 sVtxPageQuestQuadsWidth[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF3C[] = {
+static s16 sVtxPagePromptQuadsWidth[] = {
     0x0098, 0x0030, 0x0030, 0x0030, 0x0030, 0x0000,
 };
-static s16 D_8082AF48[] = {
+static s16 sVtxPageItemQuadsY[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF4C[] = {
+static s16 sVtxPageEquipQuadsY[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF50[] = {
+static s16 sVtxPageMapDungeonQuadsY[] = {
     0x001C, 0x001C, 0x002E, 0x001C, 0xFFFE, 0xFFE0, 0x0032, 0x0024, 0x0016,
     0x0008, 0xFFFA, 0xFFEC, 0xFFDE, 0xFFD0, 0x0012, 0x0012, 0x0032, 0x0000,
 };
-static s16 D_8082AF74[] = {
+static s16 sVtxPageQuestQuadsY[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AF78[] = {
+static s16 sVtxPageMapWorldQuadsY[] = {
     0x000F, 0x0028, 0x000B, 0x002D, 0x0034, 0x0025, 0x0024, 0x0039, 0x0036, 0x0021, 0x001F,
     0x002D, 0x0020, 0x002A, 0x0031, 0xFFF6, 0x001F, 0x001B, 0x000F, 0xFFCF, 0x0008, 0x0026,
     0x0007, 0x002F, 0x001E, 0x0001, 0xFFF7, 0x0019, 0x0000, 0x0001, 0xFFE0, 0xFFE6,
 };
-static s16 D_8082AFB8[] = {
+static s16 sVtxPagePromptQuadsY[] = {
     0x0024, 0x000A, 0x000A, 0xFFFA, 0xFFFA, 0x0000,
 };
-static s16 D_8082AFC4[] = {
+static s16 sVtxPageItemQuadsHeight[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AFC8[] = {
+static s16 sVtxPageEquipQuadsHeight[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AFCC[] = {
+static s16 sVtxPageMapDungeonQuadsHeight[] = {
     0x0055, 0x0055, 0x0010, 0x0018, 0x0018, 0x0018, 0x0010, 0x0010, 0x0010,
     0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0010, 0x0018, 0x0000,
 };
-static s16 D_8082AFF0[] = {
+static s16 sVtxPageQuestQuadsHeight[] = {
     0x0000,
     0x0000,
 };
-static s16 D_8082AFF4[] = {
+static s16 sVtxPagePromptQuadsHeight[] = {
     0x0010, 0x0030, 0x0030, 0x0010, 0x0010, 0x0000,
 };
 
-static s16* D_8082B000[] = {
-    D_8082AE90, D_8082AE94, D_8082AE98, D_8082AEBC, D_8082AEC0, D_8082AF00,
+static s16* sVtxPageQuadsX[] = {
+    sVtxPageItemQuadsX, sVtxPageEquipQuadsX, sVtxPageMapDungeonQuadsX, sVtxPageQuestQuadsX, sVtxPageMapWorldQuadsX, sVtxPagePromptQuadsX,
 };
 
-static s16* D_8082B018[] = {
-    D_8082AF0C, D_8082AF10, D_8082AF14, D_8082AF38, D_8082AAEC, D_8082AF3C,
+static s16* sVtxPageQuadsWidth[] = {
+    sVtxPageItemQuadsWidth, sVtxPageEquipQuadsWidth, sVtxPageMapDungeonQuadsWidth, sVtxPageQuestQuadsWidth, gVtxPageMapWorldQuadsWidth, sVtxPagePromptQuadsWidth,
 };
 
-static s16* D_8082B030[] = {
-    D_8082AF48, D_8082AF4C, D_8082AF50, D_8082AF74, D_8082AF78, D_8082AFB8,
+static s16* sVtxPageQuadsY[] = {
+    sVtxPageItemQuadsY, sVtxPageEquipQuadsY, sVtxPageMapDungeonQuadsY, sVtxPageQuestQuadsY, sVtxPageMapWorldQuadsY, sVtxPagePromptQuadsY,
 };
 
-static s16* D_8082B048[] = {
-    D_8082AFC4, D_8082AFC8, D_8082AFCC, D_8082AFF0, D_8082AB2C, D_8082AFF4,
+static s16* sVtxPageQuadsHeight[] = {
+    sVtxPageItemQuadsHeight, sVtxPageEquipQuadsHeight, sVtxPageMapDungeonQuadsHeight, sVtxPageQuestQuadsHeight, gVtxPageMapWorldQuadsHeight, sVtxPagePromptQuadsHeight,
 };
 
-static s16 D_8082B060[] = {
-    0xFFC6, 0x000B, 0x001E, 0x001E, 0x000F, 0x0026, 0xFFC2, 0x003C, 0x003D, 0xFFB2, 0xFED4,
-    0xFFAA, 0xFFBF, 0xFED4, 0xFED4, 0xFFEB, 0x000E, 0x000D, 0x0014, 0xFFDE, 0xFED4, 0x0000,
+static s16 sVtxMapWorldAreaX[] = {
+    -58,  // WORLD_MAP_AREA_HYRULE_FIELD
+    11,   // WORLD_MAP_AREA_KAKARIKO_VILLAGE
+    30,   // WORLD_MAP_AREA_GRAVEYARD
+    30,   // WORLD_MAP_AREA_ZORAS_RIVER
+    15,   // WORLD_MAP_AREA_KOKIRI_FOREST
+    38,   // WORLD_MAP_AREA_SACRED_FOREST_MEADOW
+    -62,  // WORLD_MAP_AREA_LAKE_HYLIA
+    60,   // WORLD_MAP_AREA_ZORAS_DOMAIN
+    61,   // WORLD_MAP_AREA_ZORAS_FOUNTAIN
+    -78,  // WORLD_MAP_AREA_GERUDO_VALLEY
+    -300, // WORLD_MAP_AREA_LOST_WOODS
+    -86,  // WORLD_MAP_AREA_DESERT_COLOSSUS
+    -65,  // WORLD_MAP_AREA_GERUDOS_FORTRESS
+    -300, // WORLD_MAP_AREA_HAUNTED_WASTELAND
+    -300, // WORLD_MAP_AREA_MARKET
+    -21,  // WORLD_MAP_AREA_HYRULE_CASTLE
+    14,   // WORLD_MAP_AREA_DEATH_MOUNTAIN_TRAIL
+    13,   // WORLD_MAP_AREA_DEATH_MOUNTAIN_CRATER
+    20,   // WORLD_MAP_AREA_GORON_CITY
+    -34,  // WORLD_MAP_AREA_LON_LON_RANCH
+    -300, // WORLD_MAP_AREA_QUESTION_MARK
 };
 
-static s16 D_8082B08C[] = {
-    0x0059, 0x0014, 0x000E, 0x0023, 0x0020, 0x0011, 0x0032, 0x0010, 0x0015, 0x0014, 0xFFFF,
-    0x0020, 0x0010, 0xFFFF, 0xFFFF, 0x0013, 0x0013, 0x0015, 0x0010, 0x0014, 0xFFFF, 0x0000,
+static s16 sVtxMapWorldAreaWidth[] = {
+    89, // WORLD_MAP_AREA_HYRULE_FIELD
+    20, // WORLD_MAP_AREA_KAKARIKO_VILLAGE
+    14, // WORLD_MAP_AREA_GRAVEYARD
+    35, // WORLD_MAP_AREA_ZORAS_RIVER
+    32, // WORLD_MAP_AREA_KOKIRI_FOREST
+    17, // WORLD_MAP_AREA_SACRED_FOREST_MEADOW
+    50, // WORLD_MAP_AREA_LAKE_HYLIA
+    16, // WORLD_MAP_AREA_ZORAS_DOMAIN
+    21, // WORLD_MAP_AREA_ZORAS_FOUNTAIN
+    20, // WORLD_MAP_AREA_GERUDO_VALLEY
+    -1, // WORLD_MAP_AREA_LOST_WOODS
+    32, // WORLD_MAP_AREA_DESERT_COLOSSUS
+    16, // WORLD_MAP_AREA_GERUDOS_FORTRESS
+    -1, // WORLD_MAP_AREA_HAUNTED_WASTELAND
+    -1, // WORLD_MAP_AREA_MARKET
+    19, // WORLD_MAP_AREA_HYRULE_CASTLE
+    19, // WORLD_MAP_AREA_DEATH_MOUNTAIN_TRAIL
+    21, // WORLD_MAP_AREA_DEATH_MOUNTAIN_CRATER
+    16, // WORLD_MAP_AREA_GORON_CITY
+    20, // WORLD_MAP_AREA_LON_LON_RANCH
+    -1, // WORLD_MAP_AREA_QUESTION_MARK
 };
 
-static s16 D_8082B0B8[] = {
-    0x0001, 0x000F, 0x0014, 0x0009, 0xFFE2, 0xFFEF, 0xFFDE, 0x000F, 0x001E, 0x0001, 0xFED4,
-    0x002A, 0x0007, 0xFED4, 0xFED4, 0x0018, 0x0024, 0x0035, 0x0025, 0xFFF3, 0xFED4, 0x0000,
+static s16 sVtxMapWorldAreaY[] = {
+    1,    // WORLD_MAP_AREA_HYRULE_FIELD
+    15,   // WORLD_MAP_AREA_KAKARIKO_VILLAGE
+    20,   // WORLD_MAP_AREA_GRAVEYARD
+    9,    // WORLD_MAP_AREA_ZORAS_RIVER
+    -30,  // WORLD_MAP_AREA_KOKIRI_FOREST
+    -17,  // WORLD_MAP_AREA_SACRED_FOREST_MEADOW
+    -34,  // WORLD_MAP_AREA_LAKE_HYLIA
+    15,   // WORLD_MAP_AREA_ZORAS_DOMAIN
+    30,   // WORLD_MAP_AREA_ZORAS_FOUNTAIN
+    1,    // WORLD_MAP_AREA_GERUDO_VALLEY
+    -300, // WORLD_MAP_AREA_LOST_WOODS
+    42,   // WORLD_MAP_AREA_DESERT_COLOSSUS
+    7,    // WORLD_MAP_AREA_GERUDOS_FORTRESS
+    -300, // WORLD_MAP_AREA_HAUNTED_WASTELAND
+    -300, // WORLD_MAP_AREA_MARKET
+    24,   // WORLD_MAP_AREA_HYRULE_CASTLE
+    36,   // WORLD_MAP_AREA_DEATH_MOUNTAIN_TRAIL
+    53,   // WORLD_MAP_AREA_DEATH_MOUNTAIN_CRATER
+    37,   // WORLD_MAP_AREA_GORON_CITY
+    -13,  // WORLD_MAP_AREA_LON_LON_RANCH
+    -300, // WORLD_MAP_AREA_QUESTION_MARK
 };
 
-static s16 D_8082B0E4[] = {
-    0x0024, 0x000F, 0x0010, 0x0017, 0x0017, 0x0010, 0x0018, 0x000D, 0x0011, 0x0012, 0x0001,
-    0x0019, 0x000D, 0x0001, 0x0001, 0x000D, 0x0015, 0x000F, 0x000D, 0x000C, 0x0001, 0x0000,
+static s16 sVtxMapWorldAreaHeight[] = {
+    36, // WORLD_MAP_AREA_HYRULE_FIELD
+    15, // WORLD_MAP_AREA_KAKARIKO_VILLAGE
+    16, // WORLD_MAP_AREA_GRAVEYARD
+    23, // WORLD_MAP_AREA_ZORAS_RIVER
+    23, // WORLD_MAP_AREA_KOKIRI_FOREST
+    16, // WORLD_MAP_AREA_SACRED_FOREST_MEADOW
+    24, // WORLD_MAP_AREA_LAKE_HYLIA
+    13, // WORLD_MAP_AREA_ZORAS_DOMAIN
+    17, // WORLD_MAP_AREA_ZORAS_FOUNTAIN
+    18, // WORLD_MAP_AREA_GERUDO_VALLEY
+    1,  // WORLD_MAP_AREA_LOST_WOODS
+    25, // WORLD_MAP_AREA_DESERT_COLOSSUS
+    13, // WORLD_MAP_AREA_GERUDOS_FORTRESS
+    1,  // WORLD_MAP_AREA_HAUNTED_WASTELAND
+    1,  // WORLD_MAP_AREA_MARKET
+    13, // WORLD_MAP_AREA_HYRULE_CASTLE
+    21, // WORLD_MAP_AREA_DEATH_MOUNTAIN_TRAIL
+    15, // WORLD_MAP_AREA_DEATH_MOUNTAIN_CRATER
+    13, // WORLD_MAP_AREA_GORON_CITY
+    12, // WORLD_MAP_AREA_LON_LON_RANCH
+    1,  // WORLD_MAP_AREA_QUESTION_MARK
 };
 
 static const char* gPageVtxColorCvars[][4] = {
@@ -2771,10 +2867,10 @@ static const char* gPageVtxColorCvars[][4] = {
     },
 };
 
-s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 arg3) {
-    static s16 D_8082B110 = 0;
-    static s16 D_8082B114 = 1;
-    static s16 D_8082B118 = 0;
+s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 numQuads) {
+    static s16 sTradeQuestMarkerBobY = 0;
+    static s16 sTradeQuestMarkerBobTimer = 1;
+    static s16 sTradeQuestMarkerBobState = 0;
     static const Color_RGBA8 pageColors[][4] = {
         {
             { 10, 50, 80, 255 },
@@ -2814,10 +2910,10 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
         },
     };
     PauseContext* pauseCtx = &play->pauseCtx;
-    s16* ptr1;
-    s16* ptr2;
-    s16* ptr3;
-    s16* ptr4;
+    s16* quadsX;
+    s16* quadsWidth;
+    s16* quadsY;
+    s16* quadsHeight;
     s16 bufIAfterPageSections;
     s16 pageBgQuadX;
     s16 pageBgQuadY;
@@ -2827,23 +2923,32 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
 
     pageBgQuadX = -200;
     // Each page has 15 texture blocks
-    int atlasX[15], atlasY[15], sizX[15], sizY[15];
-    bool atlasRes;
-    // for (int item = 0; item < 15; item++)
-    //     atlasRes = ResourceMgr_GetTextureAtlasInfoByName(sSelectItemTexs[gSaveContext.language][item], &atlasX[item], &atlasY[item], &sizX[item], &sizY[item], NULL, NULL);
-    //
+    int atlasX[15], atlasY[15], sizX[15], sizY[15], atlasTSizX[15], atlasTSizY[15];
+    bool atlasRes[15];
+    for (int item = 0; item < 15; item++)
+        atlasRes[item] = ResourceMgr_GetTextureAtlasInfoByName(pageTextures[pageIndex][gSaveContext.language][item],
+            &atlasX[item], &atlasY[item], &sizX[item], &sizY[item], &atlasTSizX[item],
+            &atlasTSizY[item]);
+
     for (vtxIndex = 0, colorIndex = 0; colorIndex < 3; colorIndex++) {
         pageBgQuadX += 80;
 
         for (pageBgQuadY = 80, i = 0; i < 5; i++, vtxIndex += 4, pageBgQuadY -= 32) {
-// #if USE_ATLASES
-//             for (int k = 0; k < 4; k++) {
-//                 vtx[vtxIndex + k].n.aSiz[0] = sizX[vtxIndex / 4];
-//                 vtx[vtxIndex + k].n.aSiz[1] = sizY[vtxIndex / 4];
-//                 vtx[vtxIndex + k].n.aTc[0] = atlasX[vtxIndex / 4];
-//                 vtx[vtxIndex + k].n.aTc[1] = atlasY[vtxIndex / 4];
-//             }
-// #endif
+#if USE_ATLASES
+            if (atlasRes[vtxIndex / 4]) {
+                for (int k = 0; k < 4; k++) {
+                    vtx[vtxIndex + k].n.aSiz[0] = sizX[vtxIndex / 4];
+                    vtx[vtxIndex + k].n.aSiz[1] = sizY[vtxIndex / 4];
+                    vtx[vtxIndex + k].n.aTc[0] = atlasX[vtxIndex / 4];
+                    vtx[vtxIndex + k].n.aTc[1] = atlasY[vtxIndex / 4];
+                    vtx[vtxIndex + k].n.aTSiz[0] = atlasTSizX[vtxIndex / 4];
+                    vtx[vtxIndex + k].n.aTSiz[1] = atlasTSizY[vtxIndex / 4];
+                }
+            } else {
+                for (int k = 0; k < 4; k++)
+                    vtx[vtxIndex + k].n.aTSiz[0] = -1;
+            }
+#endif
             vtx[vtxIndex + 0].v.ob[0] = vtx[vtxIndex + 2].v.ob[0] = pageBgQuadX;
 
             vtx[vtxIndex + 1].v.ob[0] = vtx[vtxIndex + 3].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] + 80;
@@ -2899,24 +3004,24 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
 
     bufIAfterPageSections = vtxIndex;
 
-    if (arg3 != 0) {
-        ptr1 = D_8082B000[pageIndex];
-        ptr2 = D_8082B018[pageIndex];
-        ptr3 = D_8082B030[pageIndex];
-        ptr4 = D_8082B048[pageIndex];
+    if (numQuads != 0) {
+        quadsX = sVtxPageQuadsX[pageIndex];
+        quadsWidth = sVtxPageQuadsWidth[pageIndex];
+        quadsY = sVtxPageQuadsY[pageIndex];
+        quadsHeight = sVtxPageQuadsHeight[pageIndex];
 
-        for (colorIndex = 0; colorIndex < arg3; colorIndex++, vtxIndex += 4) {
-            vtx[vtxIndex + 2].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] = ptr1[colorIndex];
+        for (colorIndex = 0; colorIndex < numQuads; colorIndex++, vtxIndex += 4) {
+            vtx[vtxIndex + 2].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] = quadsX[colorIndex];
 
-            vtx[vtxIndex + 1].v.ob[0] = vtx[vtxIndex + 3].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] + ptr2[colorIndex];
+            vtx[vtxIndex + 1].v.ob[0] = vtx[vtxIndex + 3].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] + quadsWidth[colorIndex];
 
             if (!((pauseCtx->state >= 8) && (pauseCtx->state <= 0x11))) {
-                vtx[vtxIndex + 0].v.ob[1] = vtx[vtxIndex + 1].v.ob[1] = ptr3[colorIndex] + pauseCtx->offsetY;
+                vtx[vtxIndex + 0].v.ob[1] = vtx[vtxIndex + 1].v.ob[1] = quadsY[colorIndex] + pauseCtx->offsetY;
             } else {
                 vtx[vtxIndex + 0].v.ob[1] = vtx[vtxIndex + 1].v.ob[1] = YREG(60 + colorIndex) + pauseCtx->offsetY;
             }
 
-            vtx[vtxIndex + 2].v.ob[1] = vtx[vtxIndex + 3].v.ob[1] = vtx[vtxIndex + 0].v.ob[1] - ptr4[colorIndex];
+            vtx[vtxIndex + 2].v.ob[1] = vtx[vtxIndex + 3].v.ob[1] = vtx[vtxIndex + 0].v.ob[1] - quadsHeight[colorIndex];
 
             vtx[vtxIndex + 0].v.ob[2] = vtx[vtxIndex + 1].v.ob[2] = vtx[vtxIndex + 2].v.ob[2] =
                 vtx[vtxIndex + 3].v.ob[2] = 0;
@@ -2927,9 +3032,9 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
             vtx[vtxIndex + 0].v.tc[0] = vtx[vtxIndex + 0].v.tc[1] = vtx[vtxIndex + 1].v.tc[1] =
                 vtx[vtxIndex + 2].v.tc[0] = 0;
 
-            vtx[vtxIndex + 1].v.tc[0] = vtx[vtxIndex + 3].v.tc[0] = ptr2[colorIndex] << 5;
+            vtx[vtxIndex + 1].v.tc[0] = vtx[vtxIndex + 3].v.tc[0] = quadsWidth[colorIndex] << 5;
 
-            vtx[vtxIndex + 2].v.tc[1] = vtx[vtxIndex + 3].v.tc[1] = ptr4[colorIndex] << 5;
+            vtx[vtxIndex + 2].v.tc[1] = vtx[vtxIndex + 3].v.tc[1] = quadsHeight[colorIndex] << 5;
 
             vtx[vtxIndex + 0].v.cn[0] = vtx[vtxIndex + 2].v.cn[0] = vtx[vtxIndex + 0].v.cn[1] =
                 vtx[vtxIndex + 2].v.cn[1] = vtx[vtxIndex + 0].v.cn[2] = vtx[vtxIndex + 2].v.cn[2] =
@@ -2945,34 +3050,34 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
 
             colorIndex = gSaveContext.worldMapArea;
 
-            vtx[vtxIndex + 0].v.ob[0] = vtx[vtxIndex + 2].v.ob[0] = D_8082B060[colorIndex];
+            vtx[vtxIndex + 0].v.ob[0] = vtx[vtxIndex + 2].v.ob[0] = sVtxMapWorldAreaX[colorIndex];
 
             if (colorIndex) {}
 
-            vtx[vtxIndex + 1].v.ob[0] = vtx[vtxIndex + 3].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] + D_8082B08C[colorIndex];
+            vtx[vtxIndex + 1].v.ob[0] = vtx[vtxIndex + 3].v.ob[0] = vtx[vtxIndex + 0].v.ob[0] + sVtxMapWorldAreaWidth[colorIndex];
 
-            vtx[vtxIndex + 0].v.ob[1] = vtx[vtxIndex + 1].v.ob[1] = D_8082B0B8[colorIndex] + pauseCtx->offsetY;
+            vtx[vtxIndex + 0].v.ob[1] = vtx[vtxIndex + 1].v.ob[1] = sVtxMapWorldAreaY[colorIndex] + pauseCtx->offsetY;
 
-            vtx[vtxIndex + 2].v.ob[1] = vtx[vtxIndex + 3].v.ob[1] = vtx[vtxIndex + 0].v.ob[1] - D_8082B0E4[colorIndex];
+            vtx[vtxIndex + 2].v.ob[1] = vtx[vtxIndex + 3].v.ob[1] = vtx[vtxIndex + 0].v.ob[1] - sVtxMapWorldAreaHeight[colorIndex];
 
             vtxIndex += 12;
 
             if (pauseCtx->tradeQuestLocation != 0xFF) {
-                if (D_8082B114 == 0) {
-                    D_8082B118++;
-                    switch (D_8082B118) {
+                if (sTradeQuestMarkerBobTimer == 0) {
+                    sTradeQuestMarkerBobState++;
+                    switch (sTradeQuestMarkerBobState) {
                         case 1:
-                            D_8082B110 = 3;
-                            D_8082B114 = 8;
+                            sTradeQuestMarkerBobY = 3;
+                            sTradeQuestMarkerBobTimer = 8;
                             break;
                         case 2:
-                            D_8082B110 = 0;
-                            D_8082B114 = 6;
-                            D_8082B118 = 0;
+                            sTradeQuestMarkerBobY = 0;
+                            sTradeQuestMarkerBobTimer = 6;
+                            sTradeQuestMarkerBobState = 0;
                             break;
                     }
                 } else {
-                    D_8082B114--;
+                    sTradeQuestMarkerBobTimer--;
                 }
 
                 colorIndex = bufIAfterPageSections + (pauseCtx->tradeQuestLocation * 4) + 64;
@@ -2982,7 +3087,7 @@ s16 KaleidoScope_SetPageVertices(PlayState* play, Vtx* vtx, s16 pageIndex, s16 a
 
                 vtx[i + 1].v.ob[0] = vtx[i + 3].v.ob[0] = vtx[i + 0].v.ob[0] + 8;
 
-                vtx[i + 0].v.ob[1] = vtx[i + 1].v.ob[1] = vtx[colorIndex + 0].v.ob[1] - D_8082B110 + 10;
+                vtx[i + 0].v.ob[1] = vtx[i + 1].v.ob[1] = vtx[colorIndex + 0].v.ob[1] - sTradeQuestMarkerBobY + 10;
 
                 vtx[i + 0].v.ob[2] = vtx[i + 1].v.ob[2] = vtx[i + 2].v.ob[2] = vtx[i + 3].v.ob[2] =
                     0;
@@ -3060,9 +3165,35 @@ void KaleidoScope_InitVertices(PlayState* play, GraphicsContext* gfxCtx) {
     KaleidoScope_SetPageVertices(play, pauseCtx->equipPageVtx, 1, 0);
 
     if (!sInDungeonScene) {
+        //int atlasX[15], atlasY[15], sizX[15], sizY[15], atlasTSizX[15], atlasTSizY[15];
+        //bool atlasRes[15];
+        //    atlasRes = ResourceMgr_GetTextureAtlasInfoByName(pageTextures[pageIndex][gSaveContext.language][item],
+        //        &atlasX[item], &atlasY[item], &sizX[item], &sizY[item], &atlasTSizX[item],
+        //        &atlasTSizY[item]);
         pauseCtx->mapPageVtx = Graph_Alloc(gfxCtx, 248 * sizeof(Vtx));
         phi_t3 = KaleidoScope_SetPageVertices(play, pauseCtx->mapPageVtx, 4, 32);
+        pauseCtx->mapPageVtx[188 + 0].v.ob[0] = pauseCtx->mapPageVtx[188 + 2].v.ob[0] = -108;
+        pauseCtx->mapPageVtx[188 + 1].v.ob[0] = pauseCtx->mapPageVtx[188 + 3].v.ob[0] = pauseCtx->mapPageVtx[188 + 2].v.ob[0] + 216;
+        pauseCtx->mapPageVtx[188 + 0].v.ob[1] = pauseCtx->mapPageVtx[188 + 1].v.ob[1] = 58 + pauseCtx->offsetY;
+        pauseCtx->mapPageVtx[188 + 2].v.ob[1] = pauseCtx->mapPageVtx[188 + 3].v.ob[1] =
+            pauseCtx->mapPageVtx[188 + 0].v.ob[1] - (135 -9);
+        pauseCtx->mapPageVtx[188 + 0].v.ob[2] = pauseCtx->mapPageVtx[188 + 1].v.ob[2] = pauseCtx->mapPageVtx[188 + 2].v.ob[2] = pauseCtx->mapPageVtx[188 + 3].v.ob[2] = 0;
+        pauseCtx->mapPageVtx[188 + 0].v.cn[0] = pauseCtx->mapPageVtx[188 + 2].v.cn[0] =
+            pauseCtx->mapPageVtx[188 + 0].v.cn[1] = pauseCtx->mapPageVtx[188 + 2].v.cn[1] =
+                pauseCtx->mapPageVtx[188 + 0].v.cn[2] = pauseCtx->mapPageVtx[188 + 2].v.cn[2] =
+                    pauseCtx->mapPageVtx[188 + 1].v.cn[0] = pauseCtx->mapPageVtx[188 + 3].v.cn[0] =
+                        pauseCtx->mapPageVtx[188 + 1].v.cn[1] = pauseCtx->mapPageVtx[188 + 3].v.cn[1] =
+                            pauseCtx->mapPageVtx[188 + 1].v.cn[2] = pauseCtx->mapPageVtx[188 + 3].v.cn[2] =
+                                pauseCtx->mapPageVtx[188 + 0].v.cn[3] = pauseCtx->mapPageVtx[188 + 2].v.cn[3] =
+                                    pauseCtx->mapPageVtx[188 + 1].v.cn[3] = pauseCtx->mapPageVtx[188 + 3].v.cn[3] =
+                                        pauseCtx->alpha;
+        pauseCtx->mapPageVtx[188 + 0].v.tc[0] = pauseCtx->mapPageVtx[188 + 0].v.tc[1] =
+            pauseCtx->mapPageVtx[188 + 1].v.tc[1] = pauseCtx->mapPageVtx[188 + 2].v.tc[0] = 0;
 
+        pauseCtx->mapPageVtx[188 + 1].v.tc[0] = pauseCtx->mapPageVtx[188 + 3].v.tc[0] = 0x1B00;
+
+        pauseCtx->mapPageVtx[188 + 2].v.tc[1] = pauseCtx->mapPageVtx[188 + 3].v.tc[1] = 4096;
+#if 0
         for (phi_t2 = 0, phi_t5 = 58; phi_t2 < 15; phi_t2++, phi_t3 += 4, phi_t5 -= 9) {
             pauseCtx->mapPageVtx[phi_t3 + 2].v.ob[0] = -108;
             pauseCtx->mapPageVtx[phi_t3 + 0].v.ob[0] = pauseCtx->mapPageVtx[phi_t3 + 2].v.ob[0];
@@ -3071,7 +3202,7 @@ void KaleidoScope_InitVertices(PlayState* play, GraphicsContext* gfxCtx) {
                 pauseCtx->mapPageVtx[phi_t3 + 0].v.ob[0] + 216;
 
             pauseCtx->mapPageVtx[phi_t3 + 0].v.ob[1] = pauseCtx->mapPageVtx[phi_t3 + 1].v.ob[1] =
-                phi_t5 + pauseCtx->offsetY;
+                phi_t5 + pauseCtx->off setY;
 
             pauseCtx->mapPageVtx[phi_t3 + 2].v.ob[1] = pauseCtx->mapPageVtx[phi_t3 + 3].v.ob[1] =
                 pauseCtx->mapPageVtx[phi_t3 + 0].v.ob[1] - 9;
@@ -3105,6 +3236,7 @@ void KaleidoScope_InitVertices(PlayState* play, GraphicsContext* gfxCtx) {
             pauseCtx->mapPageVtx[phi_t3 - 4].v.ob[1] - 2;
 
         pauseCtx->mapPageVtx[phi_t3 - 2].v.tc[1] = pauseCtx->mapPageVtx[phi_t3 - 1].v.tc[1] = 0x40;
+#endif
     } else {
         pauseCtx->mapPageVtx = Graph_Alloc(gfxCtx, 128 * sizeof(Vtx));
         KaleidoScope_SetPageVertices(play, pauseCtx->mapPageVtx, 2, 17);
@@ -3143,11 +3275,11 @@ void KaleidoScope_InitVertices(PlayState* play, GraphicsContext* gfxCtx) {
                  2 * (CVarGetInteger(CVAR_ENHANCEMENT("BetterAmmoRendering"), 0) ? ARRAY_COUNT(D_8082B11C_all)
                                                                                  : ARRAY_COUNT(D_8082B11C))) *
                     4 * sizeof(Vtx));
-    int atlasX[24], atlasY[24], sizX[24], sizY[24];
+    int atlasX[24], atlasY[24], sizX[24], sizY[24], atlasTX[24], atlasTY[24];
     for (int item = 0; item < 24; item++) {
 
         int itemId = gSaveContext.inventory.items[item];
-        bool atlasRes = ResourceMgr_GetTextureAtlasInfoByName(gItemIcons[itemId], &atlasX[item], &atlasY[item], &sizX[item], &sizY[item], NULL, NULL);
+        bool atlasRes = ResourceMgr_GetTextureAtlasInfoByName(gItemIcons[itemId], &atlasX[item], &atlasY[item], &sizX[item], &sizY[item], &atlasTX[item], &atlasTY[item]);
     }
 
     for (phi_t4 = 0, phi_t2 = 0, phi_t5 = 58; phi_t4 < 4; phi_t4++, phi_t5 -= 32) {
@@ -3158,8 +3290,11 @@ void KaleidoScope_InitVertices(PlayState* play, GraphicsContext* gfxCtx) {
                 pauseCtx->itemVtx[phi_t2 + k].n.aSiz[1] = sizY[phi_t2 / 4];
                 pauseCtx->itemVtx[phi_t2 + k].n.aTc[0] = atlasX[phi_t2 / 4];
                 pauseCtx->itemVtx[phi_t2 + k].n.aTc[1] = atlasY[phi_t2 / 4];
+                pauseCtx->itemVtx[phi_t2 + k].n.aTSiz[0] = atlasTX[phi_t2 / 4];
+                pauseCtx->itemVtx[phi_t2 + k].n.aTSiz[1] = atlasTY[phi_t2 / 4];
             }
 #endif
+
             pauseCtx->itemVtx[phi_t2 + 0].v.ob[0] = pauseCtx->itemVtx[phi_t2 + 2].v.ob[0] = phi_t1 + 2;
 
             pauseCtx->itemVtx[phi_t2 + 1].v.ob[0] = pauseCtx->itemVtx[phi_t2 + 3].v.ob[0] =
